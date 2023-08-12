@@ -1,106 +1,115 @@
 <script lang="ts">
 	import { Group, Bin as BinComponent, Text, Path } from '$lib/canvas';
-	import { sort, type Area, type Bin, type Line, type ScaleLinear } from 'd3';
+	import {
+		type Area,
+		type Bin,
+		type Line,
+		type ScaleLinear,
+		reduce,
+		area,
+		line,
+		curveStepBefore
+	} from 'd3';
+	import { sizeOf, totalOf } from './utils';
+	import AskBin from './AskBin.svelte';
 
 	export let priceRangeScale: ScaleLinear<number, number>;
-	export let qteScale: ScaleLinear<number, number>;
-	export let area: Area<[number, number]>;
-	export let line: Line<Bin<[number, number], number>>;
+	export let sizeScale: ScaleLinear<number, number>;
+	export let totalScale: ScaleLinear<number, number>;
 
 	export let bins: Bin<[number, number], number>[] = [];
-	export let sum: [number, number][] = [];
+	export let total: [number, number][] = [];
 
 	export let step = 0;
-	export let marketPriceScaled = 0;
-	export let width = 0;
+	export let marketPrice = 0;
 
-	export let gradientX0 = 0;
-	export let gradientX1 = 0;
-	export let gradientY0 = 0;
-	export let gradientY1 = 0;
+	let opacity = 0;
 
-	$: filterBins = sort(
-		bins.filter((bin) => bin.length),
-		(a, b) => a.x0 || 0 - b.x0 || 0
-	);
+	$: filterBins = bins.filter((bin) => bin.length);
 
-	// $: console.log(filterBins);
+	// $: gradientWidth = Math.min(gradientX1 - gradientX0, sizeScale.range()[1]);
+
+	$: marketPriceScaled = priceRangeScale(marketPrice);
+
+	$: _area = area()
+		.y((d) => priceRangeScale(d[0]))
+		.x0((d) => totalScale(0))
+		.x1((d) => Math.min(totalScale(d[1]), totalScale.range()[1]))
+		.curve(curveStepBefore);
+
+	$: _line = line<[number, number]>()
+		.y((d) => priceRangeScale(d[0]))
+		.x((d) => Math.min(totalScale(d[1]), totalScale.range()[1]))
+		.curve(curveStepBefore);
+
+	$: gradientX0 = 0;
+	$: gradientY0 = priceRangeScale.range()[0];
+	$: gradientX1 = totalScale.range()[1];
+	$: gradientY1 = 0;
+	$: gradientWidth = Math.min(gradientX1 - gradientX0, sizeScale.range()[1]);
+	// $: console.log(total);
+
+	function onPointerEnterHandler() {
+		opacity = 1;
+		console.log('pointerenter');
+	}
+
+	function onPointerLeaveHandler() {
+		opacity = 0;
+	}
 </script>
 
 <Group>
 	<Group>
 		<Path
-			d={area(sum)}
+			d={_area(total)}
 			gradientX={gradientX0}
 			gradientY={gradientY0}
-			gradientWidth={gradientX1 - gradientX0}
+			{gradientWidth}
 			gradientHeight={gradientY0}
 			fill={[
-				['rgb(120 25 123 / .3)', 0],
-				['rgb(195 159 66 / .1)', 1]
+				['rgb(204 46 209 / .2)', 0],
+				['rgb(195 159 66 / .06)', 1]
 			]}
 			stroke="transparent"
 		/>
 
 		<Path
-			d={line(sum)}
+			d={_line(total)}
 			gradientX={gradientX0}
 			gradientY={gradientY0}
-			gradientWidth={gradientX1 - gradientX0}
+			{gradientWidth}
 			gradientHeight={gradientY0}
 			stroke={[
-				['rgb(120 25 123 / 1)', 0],
+				['rgb(204 46 209 / 1)', 0],
 				['rgb(195 159 66 / 1)', 1]
 			]}
+			strokeWidth={1}
 			fill="transparent"
 		/>
 	</Group>
 
 	{#each filterBins as bin, i}
-		{@const y0 = Math.min(priceRangeScale(bin.x0 || 0), marketPriceScaled)}
-		{@const y1 = priceRangeScale(bin.x1 || 0)}
-		{@const _step = Math.abs(y1 - y0)}
-		{@const sumAcc = filterBins
-			.slice(0, i + 1)
-			.map((d) => d.map((dd) => dd[1]).reduce((acc, val) => acc + val, 0))
-			.reduce((acc, val) => acc + val, 0)}
-		{@const sum = bin.reduce((acc, val) => acc + val[1], 0)}
-		{@const binWidth = qteScale(sum)}
+		{@const y0 = Math.min(priceRangeScale(bin.x1 || 0), marketPriceScaled)}
+		{@const y1 = Math.min(priceRangeScale(bin.x0 || 0), marketPriceScaled)}
+		{@const height = Math.abs(y1 - y0)}
 
-		<Group>
-			<BinComponent
-				x={0}
-				y={y1}
-				height={Math.min(_step, marketPriceScaled - y1)}
-				width={binWidth}
-				gradientWidth={width}
-				fill={[
-					['rgb(120 25 123 / .6)', 0],
-					['rgb(195 159 66 / .6)', 1]
-				]}
-			/>
-			{#if _step > 10}
-				<Text
-					value={sumAcc.toFixed(1)}
-					x={Math.max(54, binWidth)}
-					dx={8}
-					y={y1}
-					dy={_step / 2}
-					baseline="middle"
-					color="white"
-				/>
-				<Text
-					value={sum.toFixed(1)}
-					x={0}
-					dx={8}
-					y={y1}
-					dy={_step / 2}
-					baseline="middle"
-					fontSize={(6 * _step) / step + 'pt'}
-					fontWeight="600"
-					color="white"
-				/>
-			{/if}
-		</Group>
+		{@const total = totalOf(filterBins.slice(0, i + 1))}
+		{@const size = sizeOf(bin)}
+		{@const sizeDepth = Math.min(sizeScale(size), sizeScale.range()[1])}
+		{@const totalDepth = Math.min(totalScale(total), totalScale.range()[1])}
+
+		<AskBin
+			x={0}
+			y={y0}
+			sizeWidth={sizeDepth}
+			totalWidth={totalDepth}
+			maxWidth={Math.max(...totalScale.range())}
+			{height}
+			{gradientWidth}
+			{step}
+			{size}
+			{total}
+		/>
 	{/each}
 </Group>

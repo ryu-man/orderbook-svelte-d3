@@ -34,7 +34,6 @@
 	$: thresholds = getThresholds([27000, 32000], priceRange);
 
 	$: maxHeight = Math.max(innerHeight, thresholds.length * 24);
-	$: step = maxHeight / thresholds.length;
 
 	function resizer(node: HTMLDivElement) {
 		clientWidth = node.clientWidth;
@@ -75,7 +74,7 @@
 				{#each productIds as productId (productId)}
 					{@const { asks$, bids$ } = stores[productId]}
 					<Orderbook
-						width={productScale.bandwidth()}
+						width={productScale.bandwidth()/4}
 						height={maxHeight}
 						x={productScale(productId)}
 						name={productId}
