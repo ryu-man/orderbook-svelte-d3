@@ -1,8 +1,7 @@
 <script lang="ts">
-	import { onMount, tick } from 'svelte';
+	import { tick } from 'svelte';
 	import { setCanvasContext } from './context';
 	import { writable, type Writable } from 'svelte/store';
-	import type { Padding } from '$lib/orderbook/types';
 
 	const { ctx$, height$, width$ } = setCanvasContext({
 		mount,
@@ -22,12 +21,7 @@
 	let node: HTMLCanvasElement;
 	let mounted = false;
 
-	const events = new Map<string, ((e: Event, ctx: CanvasRenderingContext2D) => void)[]>();
 	const queu$ = writable<((ctx: CanvasRenderingContext2D) => void)[]>([]);
-
-	$: console.log($queu$.length);
-
-	// onMount(() => {});
 
 	export function draw(queu: ((ctx: CanvasRenderingContext2D) => void)[]) {
 		$ctx$.clearRect(0, 0, $width$, $height$);
@@ -54,37 +48,15 @@
 	}
 
 	function addEventListener(type: string, callback) {
-		const array = events.get(type) || [];
-		events.set(type, [...array, callback]);
+		const handler = (e) => callback(e, $ctx$);
+		node.addEventListener(type, handler);
 
-		// node.addEventListener(type, (e) => callback(e, $ctx$));
-
-		return () => removeEventListener(type, callback);
-		// return () => node.removeEventListener(type, callback);
+		return () => node.removeEventListener(type, handler);
 	}
 
-	function removeEventListener(type: string, callback) {
-		const array = (events.get(type) || []).filter((d) => d !== callback);
-		events.set(type, array);
+	function removeEventListener(type: string, handler) {
+		return node.removeEventListener(type, handler);
 	}
-
-	function onPointerMoveHandler(e: PointerEvent) {
-		const array = events.get('pointermove') || [];
-
-		array.forEach((handler) => {
-			handler(e, $ctx$);
-		});
-	}
-
-	function onClickHandler(e: PointerEvent) {
-		const array = events.get('click') || [];
-
-		array.forEach((handler) => {
-			handler(e, $ctx$);
-		});
-	}
-
-	function isTarget(e: Event, { x = 0, y = 0 } = {}) {}
 
 	function canvasMounted(node: HTMLCanvasElement) {
 		const ctx = node.getContext('2d') as CanvasRenderingContext2D;
@@ -119,22 +91,11 @@
 </script>
 
 <div class="canvas-container">
-	{#await tick() then _}
-		<!-- promise was fulfilled -->
-		<canvas
-			bind:this={node}
-			use:canvasMounted
-			{width}
-			{height}
-			{style}
-			on:pointermove={onPointerMoveHandler}
-			on:click={onClickHandler}
-		>
-			{#if mounted}
-				<slot clientHeight={height} clientWidth={width} />
-			{/if}
-		</canvas>
-	{/await}
+	<canvas bind:this={node} use:canvasMounted {width} {height} {style}>
+		{#if mounted}
+			<slot clientHeight={height} clientWidth={width} />
+		{/if}
+	</canvas>
 </div>
 
 <style>
