@@ -17,14 +17,13 @@
 
 	export let sources: Source[];
 	export let domain: [number, number];
+	export let grouping = 10;
 
 	const { padding$ } = setOrderbookContext();
 	$: padding$.set(padding);
 
 	let clientWidth = 0;
 	let clientHeight = 0;
-
-	const grouping = 10;
 
 	$: innerWidth = clientWidth - padding.left - padding.right;
 	$: innerHeight = clientHeight - padding.top - padding.bottom;
