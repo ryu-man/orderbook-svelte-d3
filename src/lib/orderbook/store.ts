@@ -1,24 +1,9 @@
-import { derived, readable, writable, type Readable } from 'svelte/store';
+import { writable } from 'svelte/store';
 import type { Change, Snapshot, Spread, Update } from './types';
-import { max, min } from 'd3';
 
-export function messages(url: string, productIds = ['BTC-USD']) {
-	const stores: Record<
-		string,
-		{
-			bids$: Readable<Spread[]>;
-			asks$: Readable<Spread[]>;
-		}
-	> = productIds.reduce((acc, val) => {
-		const bids$ = writable([]);
-		const asks$ = writable([]);
-
-		acc[val] = {
-			bids$,
-			asks$
-		};
-		return acc;
-	}, {});
+export function messages(url: string, productId = 'BTC-USD') {
+	const bids$ = writable([]);
+	const asks$ = writable([]);
 
 	const ws = new WebSocket(url);
 
@@ -26,7 +11,7 @@ export function messages(url: string, productIds = ['BTC-USD']) {
 		ws.send(
 			JSON.stringify({
 				type: 'subscribe',
-				product_ids: productIds,
+				product_ids: [productId],
 				channels: ['level2_batch']
 			})
 		);
@@ -37,7 +22,6 @@ export function messages(url: string, productIds = ['BTC-USD']) {
 
 		switch (raw.type) {
 			case 'snapshot': {
-				const { asks$, bids$ } = stores[raw.product_id];
 				const data = parseSnapshot(raw);
 
 				bids$.set(data.bids);
@@ -46,7 +30,6 @@ export function messages(url: string, productIds = ['BTC-USD']) {
 				break;
 			}
 			case 'l2update': {
-				const { asks$, bids$ } = stores[raw.product_id];
 				const data = {
 					type: raw.type,
 					product_id: raw.product_id,
@@ -198,7 +181,7 @@ export function messages(url: string, productIds = ['BTC-USD']) {
 	// 	{ changes: [], type: '' }
 	// );
 
-	return stores;
+	return { asks$, bids$ };
 }
 
 function parseSnapshot(raw: Record<string, any>): Snapshot {

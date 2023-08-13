@@ -1,9 +1,8 @@
 <script lang="ts">
-	import { tick } from 'svelte';
 	import { setCanvasContext } from './context';
 	import { writable, type Writable } from 'svelte/store';
 
-	const { ctx$, height$, width$ } = setCanvasContext({
+	const { ctx$, height$, width$, container$ } = setCanvasContext({
 		mount,
 		unmount,
 		addEventListener,
@@ -62,8 +61,6 @@
 		const ctx = node.getContext('2d') as CanvasRenderingContext2D;
 		(ctx$ as Writable<CanvasRenderingContext2D>).set(ctx);
 
-		console.log(node.clientHeight);
-
 		mounted = true;
 
 		let frameId: number;
@@ -90,7 +87,7 @@
 	}
 </script>
 
-<div class="canvas-container">
+<div bind:this={$container$} class="canvas-container" on:scroll>
 	<canvas bind:this={node} use:canvasMounted {width} {height} {style}>
 		{#if mounted}
 			<slot clientHeight={height} clientWidth={width} />
@@ -106,5 +103,7 @@
 		margin: 0;
 		box-sizing: border-box;
 		border-width: 0;
+		overflow-y: scroll;
+		overflow-x: hidden;
 	}
 </style>
