@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { scaleBand } from 'd3';
-	import Orderbook from './Orderbook.svelte';
 	import { Canvas, Group } from '../canvas';
-	import { messages } from './store';
 	import { tick } from 'svelte';
+	import type { Source } from './types';
+	import OrderbookSource from './OrderbookSource.svelte';
+	import { setOrderbookContext } from './context';
 
-	export let productIds: string[] = [];
 	export let padding = {
 		top: 48,
 		right: 24,
@@ -15,23 +15,27 @@
 	export let width = 0;
 	export let height = 0;
 
+	export let sources: Source[];
+	export let domain: [number, number];
+	export let grouping = 10;
+
+	const { padding$ } = setOrderbookContext();
+	$: padding$.set(padding);
+
 	let clientWidth = 0;
 	let clientHeight = 0;
-
-	const stores = messages('wss://ws-feed.exchange.coinbase.com', productIds);
-
-	const priceRange = 10;
 
 	$: innerWidth = clientWidth - padding.left - padding.right;
 	$: innerHeight = clientHeight - padding.top - padding.bottom;
 
+	$: productIds = sources.map((d) => d.productId);
 	$: productScale = scaleBand()
 		.domain(productIds)
 		.range([0, innerWidth])
 		.paddingInner(0.2)
 		.paddingOuter(0);
 
-	$: thresholds = getThresholds([27000, 32000], priceRange);
+	$: thresholds = getThresholds(domain, grouping);
 
 	$: maxHeight = Math.max(innerHeight, thresholds.length * 24);
 
@@ -71,15 +75,13 @@
 	<Canvas height={maxHeight} width={clientWidth}>
 		<Group x={padding.left} y={padding.top}>
 			{#await tick() then _}
-				{#each productIds as productId (productId)}
-					{@const { asks$, bids$ } = stores[productId]}
-					<Orderbook
-						width={productScale.bandwidth()/4}
-						height={maxHeight}
+				{#each sources as { productId, url } (productId)}
+					<OrderbookSource
+						{productId}
+						{url}
 						x={productScale(productId)}
-						name={productId}
-						{asks$}
-						{bids$}
+						width={productScale.bandwidth()}
+						height={maxHeight}
 						{thresholds}
 					/>
 				{/each}
@@ -87,3 +89,9 @@
 		</Group>
 	</Canvas>
 </div>
+
+<style>
+	.storybooks {
+		overflow: hidden;
+	}
+</style>

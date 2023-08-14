@@ -32,8 +32,8 @@
 		width={sizeWidth}
 		{gradientWidth}
 		fill={[
-			['rgb(204 46 209 / .6)', 0],
-			['rgb(195 159 66 / .6)', 1]
+			['rgb(204 46 209 / .4)', 0],
+			['rgb(195 159 66 / .4)', 1]
 		]}
 	/>
 	<BinComponent

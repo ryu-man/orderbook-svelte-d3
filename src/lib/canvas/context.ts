@@ -42,6 +42,7 @@ export type CanvasContext = {
 	ctx$: Readable<CanvasRenderingContext2D>;
 	width$: Writable<number>;
 	height$: Writable<number>;
+	container$: Writable<HTMLDivElement | undefined>;
 	mount(fn: DrawFn): void;
 	unmount(fn: DrawFn): void;
 
@@ -83,11 +84,20 @@ export function setCanvasContext({
 		ctx$: writable(ctx),
 		width$: writable(width || 0),
 		height$: writable(height || 0),
+		container$: writable(),
 		mount,
 		unmount,
 		addEventListener,
 		removeEventListener,
 		getParentProps,
 		clear
+	});
+}
+
+export function overridesContext(context: Partial<CanvasContext>) {
+	const old = getCanvasContext();
+	return setContext(CANVAS_CONTEXT_KEY, {
+		...old,
+		...context
 	});
 }

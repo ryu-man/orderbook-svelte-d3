@@ -9,8 +9,12 @@
 	import AksBins from './AksBins.svelte';
 	import BidsBins from './BidsBins.svelte';
 	import PriceRanges from './PriceRanges.svelte';
+	import { onMount } from 'svelte';
+	import { browser } from '$app/environment';
+	import { getOrderbookContext } from './context';
 
-	const { height$ } = getCanvasContext();
+	const { height$, container$ } = getCanvasContext();
+	const { padding$ } = getOrderbookContext();
 
 	export let name = '';
 	export let x = 0;
@@ -83,7 +87,6 @@
 	$: asksDepthSize = Math.max(...asksBins.slice(0, asksDepthLevel + 1).map(sizeOf));
 
 	$: bidsDepthPriceRange = bidsBins.at(bidsDepthLevel)?.x0;
-	$: console.log(bidsDepthPriceRange);
 	$: bidsDepthSize = Math.max(...bidsBins.slice(0, bidsDepthLevel + 1).map(sizeOf));
 
 	$: asksSizeScale = scaleLinear([0, asksDepthSize], [0, width]);
@@ -110,18 +113,23 @@
 	/***********************************************************************************************************/
 
 	$: marketPriceScaled = priceRangeScale($marketPrice$);
+
+	// focus on the market price only on mount
+	let focused = false;
+
+	$: if (!focused && browser && $filterdAsks$.length && $filterdBids$.length) {
+		$container$?.scrollTo({
+			left: 0,
+			top: marketPriceScaled - $container$.clientHeight / 2,
+			behavior: 'instant'
+		});
+
+		focused = true;
+	}
 </script>
 
 <Group {x} {y}>
-	<Text
-		x={0}
-		dy={-48}
-		value={name}
-		fill="cyan"
-		baseline="top"
-		align="end"
-		on:click={() => console.log('orderbook::title', name)}
-	/>
+	<Text x={0} dy={-48} value={name} fill="cyan" baseline="top" align="end" />
 
 	<PriceRanges {priceRangeScale} {step} {thresholds} />
 

@@ -1,18 +1,24 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { setCanvasContext, getCanvasContext, type DrawFn } from './context';
+	import { setCanvasContext, getCanvasContext, type DrawFn, overridesContext } from './context';
 
 	export let x = 0;
 	export let y = 0;
 
-	const { mount, unmount, getParentProps, clear, ...rest } = getCanvasContext();
+	const { mount, unmount, getParentProps, clear } = getCanvasContext();
 
-	setCanvasContext({
+	// setCanvasContext({
+	// 	mount: _mount,
+	// 	unmount: _unmount,
+	// 	getParentProps: _getParentProps,
+	// 	clear,
+	// 	...rest
+	// });
+	overridesContext({
 		mount: _mount,
 		unmount: _unmount,
 		getParentProps: _getParentProps,
-		clear,
-		...rest
+		clear
 	});
 
 	let children: DrawFn[] = [];
