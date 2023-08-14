@@ -11,10 +11,26 @@
 			productId: 'BTC-USD'
 		}
 	];
+
+	let grouping = 10;
 </script>
 
 <Meta title="Orderbook" component={Orderbook} />
 
 <Story id="orderbook" name="Orderbook" let:args>
-	<Orderbooks {sources} domain={[27000, 32000]} />
+	<div style="width: 100%; height: 100%; display: flex; flex-direction:column;">
+		<div style="position: sticky; top: 0; left: 0; width: 100%; padding: 16px; background-color: rgb(0 0 0 / .9); box-sizing: border-box;">
+			<div>
+				<div style="color: white; margin-bottom:4px;">Aggregating Grouping</div>
+				<input
+				type="number"
+				value={grouping}
+				on:blur={(e) => {
+					grouping = e.currentTarget.valueAsNumber;
+				}}
+			/>
+			</div>
+		</div>
+		<Orderbooks {sources} domain={[27000, 32000]} {grouping} />
+	</div>
 </Story>
