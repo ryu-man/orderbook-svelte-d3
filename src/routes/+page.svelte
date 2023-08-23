@@ -183,7 +183,7 @@
 
 	<div class="flex-1 overflow-hidden relative" bind:clientWidth>
 		<div class="absolute inset-0 pointer-events-none z-10">
-			<div class="orderbooks-names inner absolute w-full h-12" style="top:96px">
+			<div class="orderbooks-names inner absolute w-full h-12" style="bottom:0px">
 				<div class="w-full h-full relative">
 					{#each productIds as id, i}
 						<div class="orderbook-name absolute" style:left="{productScale.step() * i + 24}px">
