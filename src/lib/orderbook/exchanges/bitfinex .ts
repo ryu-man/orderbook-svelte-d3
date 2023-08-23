@@ -80,25 +80,23 @@ function parse(raw: Record<string, any>) {
 	const asks: [number, number][] = [];
 	const bids: [number, number][] = [];
 
-	const array = raw[1];
+	const array = raw[1] as [price: number, count: number, amount: number][];
 
 	for (let i = 0; i < array.length; i++) {
 		const item = array[i];
+		const [price, count, amount] = item;
 
-		if (item[2] < 0 || item[2] === -1) {
-			if (item[1] === -1) {
-				asks.push([item[0], 0] as [number, number]);
+		if (count > 0) {
+			if (amount > 0) {
+				bids.push([price, amount] as [number, number]);
 			} else {
-				asks.push([item[0], item[2] * -1] as [number, number]);
+				asks.push([price, Math.abs(amount)] as [number, number]);
 			}
-			continue;
-		}
-
-		if (item[2] > 0 || item[2] === 1) {
-			if (item[1] === 1) {
-				bids.push([item[0], 0] as [number, number]);
-			} else {
-				bids.push([item[0], item[2]] as [number, number]);
+		} else if (count === 0) {
+			if (amount === 1) {
+				bids.push([price, 0] as [number, number]);
+			} else if (amount === -1) {
+				asks.push([price, 0] as [number, number]);
 			}
 		}
 	}
