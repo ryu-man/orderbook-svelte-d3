@@ -1,8 +1,9 @@
 <script lang="ts">
-	import { createEventDispatcher, onMount } from 'svelte';
+	import { createEventDispatcher, onMount, tick } from 'svelte';
 	import { getCanvasContext } from './context';
+	import { getDraw } from './utils';
 
-	const { mount, unmount, addEventListener, removeEventListener, getParentProps } =
+	const { mount, unmount, addEventListener, removeEventListener, getParentProps, ctx$ } =
 		getCanvasContext();
 
 	const dispatch = createEventDispatcher();
@@ -35,40 +36,103 @@
 	let transform: DOMMatrix;
 
 	let pointerenter = false;
+	const elem = getDraw(
+		(ctx: CanvasRenderingContext2D) => {
+			transform = ctx.getTransform();
+
+			ctx.fillStyle = color;
+			ctx.font = ` ${fontSize} ${fontFamily}`;
+			ctx.textAlign = align;
+			ctx.textBaseline = baseline;
+
+			// if (path) {
+			// 	ctx.fillStyle = fill;
+			// 	ctx.fill(path, 'evenodd');
+			// }
+
+			ctx.fillText(value, x + dx, y + dy);
+		},
+		{ x, y, type: 'text' }
+	);
+
+	$: measures = measure($ctx$, value, { fontFamily, fontSize, align, baseline });
+	$: elem.x = x;
+	$: elem.y = y;
+	$: elem.w = measures.w;
+	$: elem.h = measures.h;
 
 	onMount(() => {
-		mount(draw);
-		const removeClickEventListener = createEventListener('click', (e, ctx) =>
-			dispatch('click', ctx)
-		);
+		tick().then(() => {
+			mount(elem);
+		});
 
-		const removeMouseEnterEventListener = createEventListener(
-			'pointermove',
-			(e, ctx) => {
-				dispatch('pointermove');
-				if (!pointerenter) {
-					dispatch('pointerenter', ctx);
-					pointerenter = true;
-				}
-			},
-			(ctx) => {
-				if (pointerenter) {
-					dispatch('pointerleave', ctx);
-					pointerenter = false;
-				}
-			}
-		);
+		// const removeClickEventListener = createEventListener('click', (e, ctx) =>
+		// 	dispatch('click', ctx)
+		// );
+
+		// const removeMouseEnterEventListener = createEventListener(
+		// 	'pointermove',
+		// 	(e, ctx) => {
+		// 		dispatch('pointermove');
+		// 		if (!pointerenter) {
+		// 			dispatch('pointerenter', ctx);
+		// 			pointerenter = true;
+		// 		}
+		// 	},
+		// 	(ctx) => {
+		// 		if (pointerenter) {
+		// 			dispatch('pointerleave', ctx);
+		// 			pointerenter = false;
+		// 		}
+		// 	}
+		// );
 
 		return () => {
-			removeClickEventListener();
-			removeMouseEnterEventListener();
-			unmount(draw);
+			// removeClickEventListener();
+			// removeMouseEnterEventListener();
+			unmount(elem);
 		};
 	});
 
-	function draw(ctx: CanvasRenderingContext2D) {
-		transform = ctx.getTransform();
+	$: if (fill && fill !== 'transparent') {
+		path = buildPath($ctx$, value, { x, y, fontFamily, fontSize, align, baseline });
+	}
 
+	function measure(
+		ctx: CanvasRenderingContext2D,
+		value: string,
+		{ fontSize = '8pt', fontFamily = 'arial', align = 'start', baseline = 'alphabetic' } = {}
+	) {
+		if (!ctx) {
+		}
+
+		ctx.save();
+		ctx.font = ` ${fontSize} ${fontFamily}`;
+		ctx.textAlign = align;
+		ctx.textBaseline = baseline;
+
+		const metrics = ctx.measureText(value);
+
+		const w = metrics.width;
+		const h = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+
+		ctx.restore();
+
+		return { w: w, h: h };
+	}
+
+	function buildPath(
+		ctx: CanvasRenderingContext2D,
+		value: string,
+		{
+			x = 0,
+			y = 0,
+			fontSize = '8pt',
+			fontFamily = 'arial',
+			align = 'start',
+			baseline = 'alphabetic'
+		}
+	) {
 		ctx.font = ` ${fontSize} ${fontFamily}`;
 		ctx.textAlign = align;
 		ctx.textBaseline = baseline;
@@ -82,19 +146,13 @@
 		const paddingVertical = paddingLeft + paddingRight;
 		const paddingHorinzontal = paddingTop + paddingBottom;
 
-		path = new Path2D(
+		return new Path2D(
 			`M${x + dx - metrics.actualBoundingBoxLeft - paddingLeft},${
 				y + dy - metrics.actualBoundingBoxAscent - paddingTop
 			} h${width + paddingVertical} v${actualHeight + paddingHorinzontal} h${
 				-width - paddingVertical
 			} z0,0`
 		);
-
-		ctx.fillStyle = fill;
-		ctx.fill(path, 'evenodd');
-
-		ctx.fillStyle = color;
-		ctx.fillText(value, x + dx, y + dy, maxWidth);
 	}
 
 	function createEventListener(
@@ -111,7 +169,7 @@
 
 			ctx.setTransform(transform);
 
-			if (ctx.isPointInPath(path, offsetX, offsetY)) {
+			if (path && ctx.isPointInPath(path, offsetX, offsetY)) {
 				callback?.(e, ctx);
 			} else if (canCallAgain) {
 				canCallAgain = out?.(ctx) ?? true;

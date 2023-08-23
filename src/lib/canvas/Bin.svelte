@@ -1,10 +1,13 @@
 <script lang="ts">
-	import { onMount, createEventDispatcher } from 'svelte';
-	import { getCanvasContext } from './context';
+	import { onMount, createEventDispatcher, tick } from 'svelte';
+	import { tweened } from 'svelte/motion';
+	import { getCanvasContext, type DrawFn } from './context';
+	import { getDraw } from './utils';
+	import { cubicOut } from 'svelte/easing';
 
 	const dispatch = createEventDispatcher();
 
-	const { mount, unmount, addEventListener, removeEventListener } = getCanvasContext();
+	const { mount, unmount, addEventListener, removeEventListener, ctx$ } = getCanvasContext();
 
 	export let x = 0;
 	export let y = 0;
@@ -18,19 +21,46 @@
 
 	export let fill: string | [string, number][] = 'black';
 
-	// $: console.log(fill);
+	const width$ = tweened(width, { duration: 400, easing: cubicOut, delay: Math.random() * 600 });
+	$: width$.set(width);
+
+	const y$ = tweened(y, { duration: 400, easing: cubicOut });
+	$: y$.set(y);
 
 	let path: Path2D;
 	let transform: DOMMatrix;
 
 	let pointerenter = false;
 
+	const elem = getDraw(
+		(ctx: CanvasRenderingContext2D) => {
+			transform = ctx.getTransform();
+
+			if (gradient) {
+				ctx.fillStyle = gradient;
+			} else {
+				ctx.fillStyle = fill as string;
+			}
+			ctx.fillRect(x, $y$, $width$, height);
+		},
+		{ x, y, w: width, h: height, type: 'bin' }
+	);
+
+	$: elem.x = x;
+	$: elem.y = y;
+	$: elem.w = width;
+	$: elem.h = height;
+
 	onMount(() => {
-		mount(draw);
+		tick().then(() => {
+			mount(elem);
+		});
 
 		const removeEventListener = addEventListener(
 			'pointermove',
-			(e: PointerEvent, ctx: CanvasRenderingContext2D) => {
+			async (e: PointerEvent, ctx: CanvasRenderingContext2D) => {
+				await tick();
+
 				ctx.save();
 
 				const offsetX = +e.offsetX;
@@ -56,34 +86,31 @@
 		);
 
 		return () => {
-			unmount(draw);
+			unmount(elem);
 			removeEventListener();
 		};
 	});
 
-	function draw(ctx: CanvasRenderingContext2D) {
-		transform = ctx.getTransform();
+	$: gradient = buildGradient($ctx$, gradientX, gradientY, gradientWidth, gradientHeight, fill);
+	$: path = new Path2D(`M${x},${y} h${width} v${height} h${-width} z0,0`);
 
+	function buildGradient(
+		ctx: CanvasRenderingContext2D,
+		x = 0,
+		y = 0,
+		width = 0,
+		height = 0,
+		fill: string | [string, number][]
+	) {
 		if (Array.isArray(fill)) {
-			const gradient = ctx.createLinearGradient(
-				gradientX,
-				gradientY,
-				gradientX + gradientWidth,
-				gradientY + gradientHeight
-			);
+			const gradient = ctx.createLinearGradient(x, y, x + width, y + height);
 
 			fill.forEach(([color, offset]) => {
 				gradient.addColorStop(offset, color);
 			});
 
-			ctx.fillStyle = gradient;
-		} else {
-			ctx.fillStyle = fill;
+			return gradient;
 		}
-
-		path = new Path2D(`M${x},${y} h${width} v${height} h${-width} z0,0`);
-
-		ctx.fillRect(x, y, width, height);
 	}
 </script>
 

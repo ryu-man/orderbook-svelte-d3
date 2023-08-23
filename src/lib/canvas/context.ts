@@ -3,7 +3,14 @@ import { writable, type Readable, type Writable } from 'svelte/store';
 
 export const CANVAS_CONTEXT_KEY = '6XaRMari';
 
-export type DrawFn = (ctx: CanvasRenderingContext2D) => void;
+export type DrawFn = {
+	x: number;
+	y: number;
+	w: number;
+	h: number;
+	type: string;
+	draw: (ctx: CanvasRenderingContext2D) => void;
+};
 
 export type EventCallback<T extends Event> =
 	| ((e: T) => void)
@@ -42,7 +49,12 @@ export type CanvasContext = {
 	ctx$: Readable<CanvasRenderingContext2D>;
 	width$: Writable<number>;
 	height$: Writable<number>;
+	vx$: Writable<number>;
+	vy$: Writable<number>;
+	vw$: Writable<number>;
+	vh$: Writable<number>;
 	container$: Writable<HTMLDivElement | undefined>;
+	refresh$: Writable<number>;
 	mount(fn: DrawFn): void;
 	unmount(fn: DrawFn): void;
 
@@ -69,28 +81,23 @@ export function getCanvasContext() {
 	return getContext(CANVAS_CONTEXT_KEY) as CanvasContext;
 }
 
-export function setCanvasContext({
-	ctx,
-	width,
-	height,
-	mount,
-	unmount,
-	addEventListener,
-	removeEventListener,
-	getParentProps,
-	clear
-}: ContextProps): CanvasContext {
+export function setCanvasContext(props: ContextProps): CanvasContext {
 	return setContext(CANVAS_CONTEXT_KEY, {
-		ctx$: writable(ctx),
-		width$: writable(width || 0),
-		height$: writable(height || 0),
+		ctx$: writable(props.ctx),
+		width$: writable(props.width || 0),
+		height$: writable(props.height || 0),
+		vx$: writable(0),
+		vy$: writable(0),
+		vw$: writable(0),
+		vh$: writable(0),
 		container$: writable(),
-		mount,
-		unmount,
-		addEventListener,
-		removeEventListener,
-		getParentProps,
-		clear
+		refresh$: writable(1),
+		mount: props.mount,
+		unmount: props.unmount,
+		addEventListener: props.addEventListener,
+		removeEventListener: props.removeEventListener,
+		getParentProps: props.getParentProps,
+		clear: props.clear
 	});
 }
 
@@ -99,5 +106,40 @@ export function overridesContext(context: Partial<CanvasContext>) {
 	return setContext(CANVAS_CONTEXT_KEY, {
 		...old,
 		...context
+	});
+}
+
+
+/********************************************************************************************************** */
+
+const CANVAS_VIEWPORT_CONTEXT = 'canvas_viewport_context';
+
+export type CanvasViewportContext = {
+	vx$: Writable<number>;
+	vy$: Writable<number>;
+	vw$: Writable<number>;
+	vh$: Writable<number>;
+	viewportElement$: Writable<HTMLElement>;
+};
+
+export function getCanvasViewportContext(): CanvasViewportContext {
+	return (
+		getContext(CANVAS_VIEWPORT_CONTEXT) || {
+			vh$: writable(0),
+			vw$: writable(0),
+			vx$: writable(0),
+			vy$: writable(0),
+			viewportElement$: writable()
+		}
+	);
+}
+
+export function setCanvasViewportContext(): CanvasViewportContext {
+	return setContext(CANVAS_VIEWPORT_CONTEXT, {
+		vh$: writable(0),
+		vw$: writable(0),
+		vx$: writable(0),
+		vy$: writable(0),
+		viewportElement$: writable()
 	});
 }

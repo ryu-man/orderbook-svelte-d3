@@ -1,9 +1,14 @@
 <script lang="ts">
-	import { afterUpdate, onMount } from 'svelte';
+	import { onMount } from 'svelte';
 	import { getCanvasContext } from './context';
-	import type { ScaleLinear } from 'd3';
+	import { getDraw } from './utils';
 
-	const { mount, unmount } = getCanvasContext();
+	const { mount, unmount, ctx$ } = getCanvasContext();
+
+	export let x = 0;
+	export let y = 0;
+	export let width = 0;
+	export let height = 0;
 
 	export let d = '';
 	export let gradientX = 0;
@@ -14,55 +19,75 @@
 	export let strokeWidth = 1;
 	export let fill: string | [string, number][] = 'transparent';
 
+	const elem = getDraw(
+		(ctx: CanvasRenderingContext2D) => {
+			if (fillGradient) {
+				ctx.fillStyle = fillGradient;
+			} else {
+				ctx.fillStyle = fill;
+			}
+
+			if (strokeGradient) {
+				ctx.strokeStyle = strokeGradient;
+			} else {
+				ctx.strokeStyle = stroke;
+			}
+
+			ctx.fill(path);
+
+			ctx.lineWidth = strokeWidth;
+
+			ctx.stroke(path);
+		},
+		{
+			x,
+			y,
+			w: width,
+			h: height,
+			type: 'path'
+		}
+	);
+
+	$: elem.x = x;
+	$: elem.y = y;
+	$: elem.w = width;
+	$: elem.h = height;
+
+	$: path = new Path2D(d);
+	$: fillGradient = buildGradient($ctx$, gradientX, gradientY, gradientWidth, gradientHeight, fill);
+	$: strokeGradient = buildGradient(
+		$ctx$,
+		gradientX,
+		gradientY,
+		gradientWidth,
+		gradientHeight,
+		stroke
+	);
+
 	onMount(() => {
-		mount(draw);
+		mount(elem);
 
 		return () => {
-			unmount(draw);
+			unmount(elem);
 		};
 	});
 
-	$: path = new Path2D(d);
-
-	function draw(ctx: CanvasRenderingContext2D) {
+	function buildGradient(
+		ctx: CanvasRenderingContext2D,
+		x = 0,
+		y = 0,
+		width = 0,
+		height = 0,
+		fill: string | [string, number][]
+	) {
 		if (Array.isArray(fill)) {
-			const gradient = ctx.createLinearGradient(
-				gradientX,
-				gradientY,
-				gradientX + gradientWidth,
-				gradientY + gradientHeight
-			);
+			const gradient = ctx.createLinearGradient(x, y, x + width, y + height);
 
-			fill.forEach(([color, offset = 0]) => {
+			fill.forEach(([color, offset]) => {
 				gradient.addColorStop(offset, color);
 			});
 
-			ctx.fillStyle = gradient;
-		} else {
-			ctx.fillStyle = fill;
+			return gradient;
 		}
-
-		ctx.fill(path);
-
-		if (Array.isArray(stroke)) {
-			const gradient = ctx.createLinearGradient(
-				gradientX,
-				gradientY,
-				gradientX + gradientWidth,
-				gradientY + gradientHeight
-			);
-
-			stroke.forEach(([color, offset]) => {
-				gradient.addColorStop(offset, color);
-			});
-
-			ctx.strokeStyle = gradient;
-		} else {
-			ctx.strokeStyle = stroke;
-		}
-
-		ctx.lineWidth = strokeWidth;
-
-		ctx.stroke(path);
 	}
 </script>

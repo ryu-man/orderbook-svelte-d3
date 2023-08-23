@@ -3,7 +3,6 @@ export type SpreadType = 'buy' | 'sell';
 export type Spread = [price: number, volume: number];
 
 export type Snapshot = {
-	type: 'snapshot';
 	product_id?: string;
 	time?: Date;
 	asks: Spread[];

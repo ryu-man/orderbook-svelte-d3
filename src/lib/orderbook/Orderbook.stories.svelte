@@ -2,14 +2,14 @@
 	import { Meta, Story } from '@storybook/addon-svelte-csf';
 	import Orderbook from './Orderbook.svelte';
 	import Orderbooks from './Orderbooks.svelte';
+	import { CoinbaseExchange, BinanceExchange } from './exchanges';
 
 	// const products = ['ETH-USD', 'BTC-USD'];
 	// const sources = ['BTC-USD'];
-	const sources = [
-		{
-			url: 'wss://ws-feed.exchange.coinbase.com',
-			productId: 'BTC-USD'
-		}
+	let from = 'BTC'; // | 'ETH' | 'SOL'
+	const exchanges = [
+		new CoinbaseExchange('BTC-USD', 'wss://ws-feed.exchange.coinbase.com')
+		// new BinanceExchange('btcusdt', 'wss://stream.binance.com:443/ws')
 	];
 
 	let grouping = 10;
@@ -34,6 +34,8 @@
 			</div>
 		</div>
 
-		<Orderbooks {sources} domain={[27000, 32000]} {grouping} />
+		<div style="flex:1; overflow: hidden;">
+			<Orderbooks {exchanges} domain={[24000, 29000]} {grouping} />
+		</div>
 	</div>
 </Story>
