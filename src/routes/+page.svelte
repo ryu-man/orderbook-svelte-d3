@@ -148,7 +148,7 @@
 			</div>
 
 			<div class="flex items-center">
-				<span class="text-4xl text-white font-black">Ask Theme</span>
+				<span class="text-4xl text-white font-black">Bid Theme</span>
 			</div>
 
 			<div class="flex flex-col">
