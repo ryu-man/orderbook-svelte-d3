@@ -16,7 +16,6 @@ export class CoinbaseExchange extends Exchange<Snapshot, Update> {
 
 	onMessage(this: WebSocket, e: MessageEvent<any>, exchange: CoinbaseExchange): void {
 		const raw = JSON.parse(e.data);
-
 		switch (raw.type) {
 			case 'snapshot': {
 				exchange.onSnapshot(raw);
@@ -53,11 +52,13 @@ export class CoinbaseExchange extends Exchange<Snapshot, Update> {
 		const update = parseUpadate(data);
 		const domain = this.stat.domain$.value ?? [0, 0];
 
-		const asksChanges: [number, number][] = update.asks.filter((d) => within(d[1], domain));
+		const asksChanges: [number, number][] = update.asks.filter((d) => within(d[0], domain));
 		this.stat.asks$.update((val) => sort(syncAll(val, asksChanges), (a, b) => a[0] - b[0]));
 
-		const bidsChanges: [number, number][] = update.bids.filter((d) => within(d[1], domain));
+		const bidsChanges: [number, number][] = update.bids.filter((d) => within(d[0], domain));
 		this.stat.bids$.update((val) => sort(syncAll(val, bidsChanges), (a, b) => b[0] - a[0]));
+
+		console.log(asksChanges, bidsChanges);
 	}
 
 	subscribe(): void {
