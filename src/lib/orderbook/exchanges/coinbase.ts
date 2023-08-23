@@ -57,8 +57,6 @@ export class CoinbaseExchange extends Exchange<Snapshot, Update> {
 
 		const bidsChanges: [number, number][] = update.bids.filter((d) => within(d[0], domain));
 		this.stat.bids$.update((val) => sort(syncAll(val, bidsChanges), (a, b) => b[0] - a[0]));
-
-		console.log(asksChanges, bidsChanges);
 	}
 
 	subscribe(): void {
