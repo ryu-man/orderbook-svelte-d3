@@ -34,23 +34,25 @@ export function setConfigurationContext(): ConfigurationContext {
 			asks$: writable({
 				binFill: [
 					['rgb(204 46 209 / .1)', 0],
-					['rgb(195 159 66 / .6)', 1]
+					['rgb(255 6 148 / .6)', 1]
 				],
 				areaFill: [
 					['rgb(204 46 209 / .2)', 0],
-					['rgb(195 159 66 / .06)', 1]
+					['rgb(255 6 148 / .06)', 1]
 				]
 			}),
 			bids$: writable({
 				binFill: [
 					['rgb(68 123 99 / .1)', 0],
-					['rgb(30 62 174 / .6)', 1]
+					['rgb(28 180 232 / .6)', 1]
 				],
 				areaFill: [
 					['rgb(68 123 99 / .2)', 0],
-					['rgb(30 62 174 / .06)', 1]
+					['rgb(28 180 232 / .06)', 1]
 				]
 			})
 		}
 	});
 }
+
+255, 6, 148;
