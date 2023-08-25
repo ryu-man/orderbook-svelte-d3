@@ -1,6 +1,7 @@
-import { domain, marketPrice, syncAll, within } from './utils';
+import { domain, getDefaultGroupingValue, marketPrice, syncAll, within } from './utils';
 import { Exchange } from './exchange';
 import { sort } from 'd3';
+import { ceil, floor } from '$lib/utils';
 
 export type Snapshot = {
 	action: 'snapshot';
@@ -38,7 +39,7 @@ export type Update = {
 	ts: 1692797241430;
 };
 
-function parseSnapshot(raw: Record<string, any>) {
+function parse(raw: Record<string, any>) {
 	const asks: [number, number][] = [];
 	for (const d of raw.data?.[0]?.asks ?? []) {
 		asks.push([parseFloat(d[0]), parseFloat(d[1])]);
@@ -55,23 +56,6 @@ function parseSnapshot(raw: Record<string, any>) {
 	};
 }
 
-function parseUpdate(raw: Record<string, any>) {
-	const a: [number, number][] = [];
-	for (const d of raw.data?.[0]?.asks ?? []) {
-		a.push([parseFloat(d[0]), parseFloat(d[1])]);
-	}
-
-	const b: [number, number][] = [];
-	for (const d of raw.data?.[0]?.bids ?? []) {
-		b.push([parseFloat(d[0]), parseFloat(d[1])]);
-	}
-
-	return {
-		asks: a,
-		bids: b
-	};
-}
-
 export class BitgetExchange extends Exchange<Snapshot, Update> {
 	#unsubscribe_props: Record<string, any> = {};
 
@@ -82,47 +66,39 @@ export class BitgetExchange extends Exchange<Snapshot, Update> {
 	onMessage(this: WebSocket, e: MessageEvent<any>, exchange: BitgetExchange): void {
 		const raw = JSON.parse(e.data);
 
-		// console.log(raw);
-
-		// return;
-
 		if (raw.action === 'snapshot') {
-			const parsed = parseSnapshot(raw);
-			const asks = sort(parsed.asks, (a, b) => a[0] - b[0]);
-			const bids = sort(parsed.bids, (a, b) => b[0] - a[0]);
+			const parsed = parse(raw);
+			const limitsDomain = exchange.stat.limits$.value || [30000, 0.00001];
 
-			const mn = Math.ceil(asks[0][0]);
-			const mx = Math.ceil(bids[0][0]);
+			const asks = sort(
+				parsed.asks.filter((d) => within(d[0], limitsDomain)),
+				(a, b) => a[0] - b[0]
+			);
+			const bids = sort(
+				parsed.bids.filter((d) => within(d[0], limitsDomain)),
+				(a, b) => b[0] - a[0]
+			);
 
-			const mp = marketPrice(mn, mx);
-			const dm = domain(mp, 10, 200);
+			exchange.stat.asks0$.set(asks);
+			exchange.stat.bids0$.set(bids);
 
-			exchange.stat.asks$.set(asks.filter((d) => within(d[0], dm)));
-			exchange.stat.bids$.set(bids.filter((d) => within(d[0], dm)));
+			exchange.stat.ready$.set(true);
 
 			return;
 		}
 
 		if (raw.action === 'update') {
-			exchange.onUpdate(raw);
+			const parsed = parse(raw);
+
+			const ask = exchange.stat.asks0$.value[0];
+			const bid = exchange.stat.bids0$.value[0];
+
+			exchange.stat.asks0$.set(parsed.asks.filter((d) => d[0] > bid[0]));
+			exchange.stat.bids0$.set(parsed.bids.filter((d) => d[0] < ask[0]));
 		}
 	}
 
-	onUpdate(data: Update): void {
-		const parsed = parseUpdate(data);
-
-		const domain = this.stat.domain$.value || [0, 0];
-
-		const asks = parsed.asks.filter((d) => within(d[0], domain));
-		const bids = parsed.bids.filter((d) => within(d[0], domain));
-
-		this.stat.asks$.update((val) => sort(syncAll(val, asks), (a, b) => a[0] - b[0]));
-		this.stat.bids$.update((val) => sort(syncAll(val, bids), (a, b) => b[0] - a[0]));
-	}
-
 	subscribe(): void {
-		// const param = `orderbook.500.${this.productID}`;
-
 		this.#unsubscribe_props = {
 			op: 'unsubscribe',
 			args: [

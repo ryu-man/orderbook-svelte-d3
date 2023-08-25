@@ -15,7 +15,9 @@ export type OrderbookTheme = {
 };
 
 export type ConfigurationContext = {
+	marketDomain$: Writable<[number, number]>;
 	grouping$: Writable<number>;
+	groupingValues$: Writable<number[]>;
 	theme: OrderbookTheme;
 };
 
@@ -25,7 +27,9 @@ export function getConfigurationContext(): ConfigurationContext {
 
 export function setConfigurationContext(): ConfigurationContext {
 	return setContext(CONTEXT_KEY, {
-		grouping$: writable(10),
+		marketDomain$: writable([0, 0]),
+		grouping$: writable(0),
+		groupingValues$: writable([]),
 		theme: {
 			asks$: writable({
 				binFill: [

@@ -1,31 +1,23 @@
 import type { Spread } from '../types';
-import { domain, marketPrice, syncAll, within } from './utils';
+import {
+	domain,
+	getDefaultGroupingValue,
+	getMaxGroupingValue,
+	marketPrice,
+	syncAll,
+	within
+} from './utils';
 import { Exchange } from './exchange';
 import { sort } from 'd3';
+import { ceil, floor } from '$lib/utils';
 
 export type Snapshot = {
-	topic: string;
-	ts: number;
-	type: 'snapshot';
-	data: {
-		s: string;
-		b: Spread[];
-		a: Spread[];
-		u: number;
-		seq: number;
-	};
+	asks: Spread[];
+	bids: Spread[];
 };
 export type Update = {
-	topic: string;
-	ts: number;
-	type: 'delta';
-	data: {
-		s: string;
-		b: Spread[];
-		a: Spread[];
-		u: number;
-		seq: number;
-	};
+	asks: Spread[];
+	bids: Spread[];
 };
 export type DepthUpdate = {
 	E: number;
@@ -37,55 +29,6 @@ export type DepthUpdate = {
 	u: number;
 };
 
-function parseSnapshot(raw: Record<string, any>): Snapshot {
-	const asks: [number, number][] = [];
-	for (const d of raw.data.a) {
-		asks.push([parseFloat(d[0]), parseFloat(d[1])]);
-	}
-
-	const bids: [number, number][] = [];
-	for (const d of raw.data.b) {
-		bids.push([parseFloat(d[0]), parseFloat(d[1])]);
-	}
-
-	return {
-		topic: raw.topic,
-		ts: raw.ts,
-		type: raw.type,
-		data: {
-			s: raw.data.s,
-			b: bids,
-			a: asks,
-			u: raw.data.u,
-			seq: raw.data.seq
-		}
-	};
-}
-
-function parseUpdate(raw: Record<string, any>): Update {
-	const a: [number, number][] = [];
-	for (const d of raw.data.a) {
-		a.push([parseFloat(d[0]), parseFloat(d[1])]);
-	}
-
-	const b: [number, number][] = [];
-	for (const d of raw.data.b) {
-		b.push([parseFloat(d[0]), parseFloat(d[1])]);
-	}
-
-	return {
-		topic: raw.topic,
-		ts: raw.ts,
-		type: raw.type,
-		data: {
-			s: raw.data.s,
-			b: b,
-			a: a,
-			u: raw.data.u,
-			seq: raw.data.seq
-		}
-	};
-}
 
 export class BybitExchange extends Exchange<Snapshot, Update> {
 	#unsubscribe_props: Record<string, any> = {};
@@ -98,37 +41,35 @@ export class BybitExchange extends Exchange<Snapshot, Update> {
 		const raw = JSON.parse(e.data);
 
 		if (raw.type === 'snapshot') {
-			const parsed = parseSnapshot(raw);
-			const asks = sort(parsed.data.a, (a, b) => a[0] - b[0]);
-			const bids = sort(parsed.data.b, (a, b) => b[0] - a[0]);
+			const parsed = parse(raw);
+			const limitsDomain = exchange.stat.limits$.value || [30000, 0.00001];
 
-			const mn = Math.ceil(asks[0][0]);
-			const mx = Math.ceil(bids[0][0]);
+			const asks = sort(
+				parsed.asks.filter((d) => within(d[0], limitsDomain)),
+				(a, b) => a[0] - b[0]
+			);
+			const bids = sort(
+				parsed.bids.filter((d) => within(d[0], limitsDomain)),
+				(a, b) => b[0] - a[0]
+			);
 
-			const mp = marketPrice(mn, mx);
-			const dm = domain(mp, 10, 200);
+			exchange.stat.asks0$.set(asks);
+			exchange.stat.bids0$.set(bids);
 
-			exchange.stat.asks$.set(asks.filter((d) => within(d[0], dm)));
-			exchange.stat.bids$.set(bids.filter((d) => within(d[0], dm)));
+			exchange.stat.ready$.set(true);
 
 			return;
 		}
 
 		if (raw.type === 'delta') {
-			exchange.onUpdate(raw);
+			const parsed = parse(raw);
+
+			const ask = exchange.stat.asks0$.value[0];
+			const bid = exchange.stat.bids0$.value[0];
+
+			exchange.stat.asks0$.set(parsed.asks.filter((d) => d[0] > bid[0]));
+			exchange.stat.bids0$.set(parsed.bids.filter((d) => d[0] < ask[0]));
 		}
-	}
-
-	onUpdate(data: Update): void {
-		const parsed = parseUpdate(data);
-
-		const domain = this.stat.domain$.value || [0, 0];
-
-		const asks = parsed.data.a.filter((d) => within(d[0], domain));
-		const bids = parsed.data.b.filter((d) => within(d[0], domain));
-
-		this.stat.asks$.update((val) => sort(syncAll(val, asks), (a, b) => a[0] - b[0]));
-		this.stat.bids$.update((val) => sort(syncAll(val, bids), (a, b) => b[0] - a[0]));
 	}
 
 	subscribe(): void {
@@ -153,4 +94,20 @@ export class BybitExchange extends Exchange<Snapshot, Update> {
 		this.ws.send(JSON.stringify(this.#unsubscribe_props));
 		this.#unsubscribe_props = {};
 	}
+}
+
+function parse(raw: Record<string, any>) {
+	const asks: [number, number][] = [];
+	for (const d of raw.data.a) {
+		asks.push([parseFloat(d[0]), parseFloat(d[1])]);
+	}
+
+	const bids: [number, number][] = [];
+	for (const d of raw.data.b) {
+		bids.push([parseFloat(d[0]), parseFloat(d[1])]);
+	}
+	return {
+		asks,
+		bids
+	};
 }

@@ -8,37 +8,116 @@
 		BybitExchange,
 		BitgetExchange,
 		KrakenExchange,
-		Exchange
+		Exchange,
+		getMaxGroupingValue
 	} from '$lib/orderbook/exchanges';
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { colord } from 'colord';
 	import { getConfigurationContext } from '$lib/configuration';
 	import { ColorPickr } from '$lib/component';
 	import { scaleBand } from 'd3';
+	import { derived } from 'svelte/store';
 
 	const { grouping$, theme } = getConfigurationContext();
 
 	const askTheme$ = theme.asks$;
 	const bidTheme$ = theme.bids$;
 
-	// const products = ['ETH-USD', 'BTC-USD'];
-	// const sources = ['BTC-USD'];
+	const currencies = ['BTC', 'ETH', 'XRP'];
+
 	let from = 'BTC'; // | 'ETH' | 'SOL'
-	let exchanges: Exchange[] = [];
+
+	let exchanges: Exchange[] = [
+		new CoinbaseExchange({ from: from, to: 'USD' }),
+		new BinanceExchange({ from: from.toLowerCase(), to: 'usdt' }),
+		new BitfinexExchange({ from: from, to: 'USD' }),
+		new BitmexExchange({ from: from, to: 'USD' }),
+		new BybitExchange({ from: from, to: 'USDT' }),
+		new BitgetExchange({ from: from, to: 'USDT' }),
+		new KrakenExchange({ from: from, to: 'USD' })
+	];
 
 	let clientWidth = 0;
 
-	onMount(() => {
-		exchanges = [
-			new CoinbaseExchange({ from: 'BTC', to: 'USD' }),
-			new BinanceExchange({ from: 'btc', to: 'usdt' }),
-			new BitfinexExchange({ from: 'BTC', to: 'USD' }),
-			new BitmexExchange({ from: 'XBT', to: 'USD' }),
-			new BybitExchange({ from: 'BTC', to: 'USDT' }),
-			new BitgetExchange({ from: 'BTC', to: 'USDT' }),
-			new KrakenExchange({ from: 'BTC', to: 'USD' })
-		];
-	});
+	const maxDomain$ = derived(
+		exchanges.map((d) => d.domain$),
+		(domains) => {
+			if (domains.some((d) => d[1] === 0)) {
+				return 0;
+			}
+
+			const first = domains[0];
+			return domains.reduce((acc, val) => Math.max(acc, val[0]), first[0]);
+		},
+		0
+	);
+	const minDomain$ = derived(
+		exchanges.map((d) => d.domain$),
+		(domains) => {
+			if (domains.some((d) => d[1] === 0)) {
+				return 0;
+			}
+
+			const first = domains[0];
+			return domains.reduce((acc, val) => Math.min(acc, val[1]), first[1]);
+		},
+		0
+	);
+	const domain = derived(
+		[maxDomain$, minDomain$],
+		([max, min]) => {
+			return [max, min];
+		},
+		[0, 0]
+	);
+
+	const aggregationValues$ = derived(
+		domain,
+		([max, min]) => {
+			if (max === 0 || min === 0) {
+				return [];
+			}
+
+			const values: number[] = [];
+			if (max === 0) {
+				return values;
+			}
+
+			// console.log(max)
+			const maxGroupingValue = getMaxGroupingValue(max);
+
+			let start = maxGroupingValue;
+			let level = 10;
+			let l = 4;
+			let a = 4;
+
+			let i = 13;
+			while (i > 0) {
+				values.push(start * (a / l));
+
+				if (a === 1) {
+					start = maxGroupingValue / level;
+					level *= 10;
+					a = 4;
+					values.push(start);
+				}
+
+				a = a - 1;
+				i--;
+			}
+			return values;
+		},
+		[]
+	);
+
+	onMount(() =>
+		aggregationValues$.subscribe((d) => {
+			console.log(d);
+			if (d.length && $grouping$ === 0) {
+				grouping$.set(d[0] / 100);
+			}
+		})
+	);
 
 	$: productIds = exchanges.map((d) => d.fullname);
 	$: productScale = scaleBand()
@@ -48,7 +127,7 @@
 		.paddingOuter(0.3);
 
 	function onChangeProduct(id: string) {
-		return () => {
+		return async () => {
 			from = id;
 
 			for (let i = 0; i < exchanges.length; i++) {
@@ -56,12 +135,14 @@
 
 				exchange.disconnect();
 			}
+			grouping$.set(0);
 
 			for (let i = 0; i < exchanges.length; i++) {
 				const exchange = exchanges[i];
 				exchange.from(id).connect();
 			}
 
+			await tick();
 			exchanges = exchanges;
 		};
 	}
@@ -71,20 +152,20 @@
 	class="w-full h-full overflow-hidden flex flex-col relative"
 	style="background-color: rgb(0 0 0)"
 >
-	<div class="settings-bar absolute top-0 left-0 z-10 w-full" style="backdrop-filter: blur(6px);">
+	<div
+		class="settings-bar absolute top-0 left-0 z-10 w-full border-b border-white border-opacity-20"
+		style="backdrop-filter: blur(6px);"
+	>
 		<div class="w-full p-4 box-border flex gap-6">
 			<div class="flex gap-2">
 				<div class="flex items-center gap-2">
-					<button
-						class="currency-switch"
-						class:selected={from === 'BTC'}
-						on:click={onChangeProduct('BTC')}>BTC</button
-					>
-					<button
-						class="currency-switch"
-						class:selected={from === 'ETH'}
-						on:click={onChangeProduct('ETH')}>ETH</button
-					>
+					{#each currencies as currency}
+						<button
+							class="currency-switch"
+							class:selected={from === currency}
+							on:click={onChangeProduct(currency)}>{currency}</button
+						>
+					{/each}
 				</div>
 			</div>
 			<div class="flex flex-col">
@@ -95,23 +176,9 @@
 					value={$grouping$ + ''}
 					on:change={(e) => grouping$.set(parseFloat(e.currentTarget.value))}
 				>
-					<option value="0.1">0.1</option>
-					<option value="0.25">0.25</option>
-					<option value="0.5">0.5</option>
-					<option value="0.75">0.75</option>
-					<option value="1">1</option>
-					<option value="2.5">2.5</option>
-					<option value="5">5</option>
-					<option value="7.5">7.5</option>
-					<option value="10">10</option>
-					<option value="25">25</option>
-					<option value="50">50</option>
-					<option value="75">75</option>
-					<option value="100">100</option>
-					<option value="250">250</option>
-					<option value="500">500</option>
-					<option value="750">750</option>
-					<option value="1000">1000</option>
+					{#each $aggregationValues$ as val}
+						<option value={val + ''}>{val}</option>
+					{/each}
 				</select>
 			</div>
 
@@ -183,7 +250,10 @@
 
 	<div class="flex-1 overflow-hidden relative" bind:clientWidth>
 		<div class="absolute inset-0 pointer-events-none z-10">
-			<div class="orderbooks-names inner absolute w-full h-12" style="bottom:0px">
+			<div
+				class="orderbooks-names inner absolute w-full h-12 border-t border-white border-opacity-20"
+				style="bottom:0px"
+			>
 				<div class="w-full h-full relative">
 					{#each productIds as id, i}
 						<div class="orderbook-name absolute" style:left="{productScale.step() * i + 24}px">

@@ -1,11 +1,12 @@
 <script lang="ts">
-	import { readable } from 'svelte/store';
+	import { derived, readable } from 'svelte/store';
 	import { documentVisibilityStore } from 'svelte-legos';
 	import Orderbook from './Orderbook.svelte';
 	import { onMount } from 'svelte';
 	import type { Exchange } from './exchanges/exchange';
 	import type { Spread } from './types';
 	import { getConfigurationContext } from '../configuration';
+	import { ceil, floor } from '$lib/utils';
 
 	const visibility$ = documentVisibilityStore();
 	const { grouping$, theme } = getConfigurationContext();
@@ -28,36 +29,65 @@
 	const askTheme$ = theme.asks$;
 	const bidTheme$ = theme.bids$;
 
-	$: exchange.grouping$.set($grouping$);
+	const thresholds$ = derived([exchange.domain$, grouping$], ([domain, grouping]) => {
+		const res: number[] = [];
 
-	const asks$ = readable(asks, (set) => {
+		if (grouping === 0) {
+			return [];
+		}
+
+		if (domain[0] === 0 || domain[1] === 0) {
+			return [];
+		}
+
+		const fraction = Math.floor(Math.log10(grouping));
+
+		const end = ceil(Math.max(...domain), fraction * -1);
+		let start = floor(Math.min(...domain), fraction * -1);
+
+		if (start === 0 && end === 0) {
+			return res;
+		}
+
+		while (start < end) {
+			res.push(start);
+			start += grouping;
+		}
+		return res;
+	});
+
+	const _asks$ = readable(asks, (set) => {
 		const id = setInterval(() => set(asks), ms);
 
 		return () => {
 			clearInterval(id);
 		};
 	});
-	const bids$ = readable(bids, (set) => {
+	const _bids$ = readable(bids, (set) => {
 		const id = setInterval(() => set(bids), ms);
 
 		return () => {
 			clearInterval(id);
 		};
 	});
-	const thresholds$ = readable(thresholds, (set) => {
+	const _thresholds$ = readable(thresholds, (set) => {
 		const id = setInterval(() => set(thresholds), ms);
 
 		return () => {
 			clearInterval(id);
 		};
 	});
-	const marketPrice$ = readable(marketPrice, (set) => {
+	const _marketPrice$ = readable(marketPrice, (set) => {
 		const id = setInterval(() => set(marketPrice), ms);
 
 		return () => {
 			clearInterval(id);
 		};
 	});
+
+	const asks$ = exchange.asks$;
+	const bids$ = exchange.bids$;
+	const marketPrice$ = exchange.marketPrice$;
 
 	onMount(() => {
 		exchange.connect();
@@ -71,33 +101,18 @@
 				}
 			}
 		});
+
 		return () => {
 			unsubscribe();
 			exchange.disconnect();
 		};
 	});
 
-	onMount(() =>
-		exchange.asks$.subscribe((val) => {
-			asks = val;
-		})
-	);
-
-	onMount(() =>
-		exchange.bids$.subscribe((val) => {
-			bids = val;
-		})
-	);
-	onMount(() =>
-		exchange.thresholds$.subscribe((val) => {
-			thresholds = val;
-		})
-	);
-	onMount(() =>
-		exchange.marketPrice$.subscribe((val) => {
-			marketPrice = val;
-		})
-	);
+	$: exchange.grouping$.set($grouping$);
+	$: thresholds = $thresholds$;
+	$: asks = $asks$;
+	$: bids = $bids$;
+	$: marketPrice = $marketPrice$;
 </script>
 
 <Orderbook
@@ -106,10 +121,10 @@
 	{x}
 	{y}
 	name={exchange.fullname}
-	{asks$}
-	{bids$}
-	{thresholds$}
-	{marketPrice$}
+	asks$={_asks$}
+	bids$={_bids$}
+	thresholds$={_thresholds$}
+	marketPrice$={_marketPrice$}
 	askTheme={$askTheme$}
 	bidTheme={$bidTheme$}
 	grouping={$grouping$}

@@ -15,6 +15,7 @@
 	import { sizeOf, totalOf } from './utils';
 	import BidBin from './BidBin.svelte';
 	import { colord } from 'colord';
+	import { domain } from './exchanges';
 
 	export let priceRangeScale: ScaleLinear<number, number>;
 	export let sizeScale: ScaleLinear<number, number>;
@@ -64,7 +65,7 @@
 
 	$: y = priceRangeScale(bins.at(0)?.x1 ?? 0);
 	$: width = totalScale.range()[1];
-	$: height = priceRangeScale(bins.at(-1)?.x0 ?? 0) - y;
+	$: height = priceRangeScale.range()[1] - y;
 
 	// #1e3eae
 	// #447b63
@@ -73,7 +74,11 @@
 <Group>
 	<Group>
 		<Path
-			d={_area([[marketPrice, 0], ...total])}
+			d={_area([
+				[marketPrice, 0],
+				...total,
+				[priceRangeScale.domain()[1] || 0, totalScale.domain()[1] || 0]
+			])}
 			{y}
 			{height}
 			{width}
@@ -86,7 +91,11 @@
 		/>
 
 		<Path
-			d={_line([[marketPrice, 0], ...total])}
+			d={_line([
+				[marketPrice, 0],
+				...total,
+				[priceRangeScale.domain()[1] || 0, totalScale.domain()[1] || 0]
+			])}
 			{y}
 			{height}
 			{width}

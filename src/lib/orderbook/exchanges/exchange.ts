@@ -1,7 +1,9 @@
-import { writable, readonly } from 'svelte/store';
+import { readonly, type Writable } from 'svelte/store';
 import type { Spread } from '../types';
-import { marketPrice } from './utils';
-import { derived } from './store';
+import { marketPrice, syncAll, within } from './utils';
+import { derived, writable } from './store';
+import { ceil, floor } from '$lib/utils';
+import { sort } from 'd3';
 
 export abstract class Exchange<S = any, U = any> {
 	protected ws: WebSocket;
@@ -14,10 +16,11 @@ export abstract class Exchange<S = any, U = any> {
 
 	public asks$ = readonly(this.stat.asks$);
 	public bids$ = readonly(this.stat.bids$);
+	public domain$ = readonly(this.stat.domain$);
 
 	public marketPrice$ = this.stat.marketPrice$;
-	public thresholds$ = this.stat.thresholds$;
-	public length$ = this.stat.length$;
+	// public thresholds$ = this.stat.thresholds$;
+	// public length$ = this.stat.length$;
 	public grouping$ = this.stat.grouping$;
 
 	removeEventListeners: (() => void)[] = [];
@@ -35,8 +38,8 @@ export abstract class Exchange<S = any, U = any> {
 
 		// Load market snapshot
 		this.getSnapshot().then((snapshot) => {
-			this.stat.asks$.set(snapshot.asks);
-			this.stat.bids$.set(snapshot.bids);
+			this.stat.asks0$.set(snapshot.asks);
+			this.stat.bids0$.set(snapshot.bids);
 		});
 
 		const handler = (e) => {
@@ -57,12 +60,12 @@ export abstract class Exchange<S = any, U = any> {
 		this.removeEventListeners.forEach((cb) => cb());
 		this.unsubscribe();
 		this.ws.close();
-		this.stat.asks$.set([]);
-		this.stat.bids$.set([]);
+		this.stat.asks0$.clear();
+		this.stat.bids0$.clear();
 	}
 
 	isClosed() {
-		return this.ws.readyState === this.ws.CLOSED;
+		return this.ws?.readyState === 3;
 	}
 
 	from(): string;
@@ -105,10 +108,6 @@ export abstract class Exchange<S = any, U = any> {
 			bids: []
 		});
 	}
-	// eslint-disable-next-line @typescript-eslint/no-empty-function
-	onSnapshot(data: S) {}
-	// eslint-disable-next-line @typescript-eslint/no-empty-function
-	onUpdate(data: U) {}
 
 	abstract onMessage(this: WebSocket, e: MessageEvent, exchange: Exchange<S, U>): void;
 	abstract subscribe(): void;
@@ -116,52 +115,127 @@ export abstract class Exchange<S = any, U = any> {
 }
 
 export function queu() {
-	const asks$ = writable<Spread[]>([]);
-	const bids$ = writable<Spread[]>([]);
+	const asks0$ = ask_spreads();
+	const bids0$ = bid_spreads();
 
-	const grouping$ = writable<number>(10);
+	const limits$ = writable<[number, number]>([30000, 0.00001]);
+	const grouping$ = writable(0);
 
-	const length$ = writable<number>(200);
+	const ask0$ = derived(asks0$, (asks) => asks[0] || [0, 0]);
+	const bid0$ = derived(bids0$, (bids) => bids[0] || [0, 0]);
 
-	const marketPrice$ = derived([asks$, bids$], ([asks, bids]) =>
-		marketPrice(asks[0]?.[0] ?? 0, bids[0]?.[0] ?? 0)
+	const ask0Price$ = derived(ask0$, (ask) => ask[0] ?? 0, 0);
+	const bid0Price$ = derived(bid0$, (bid) => bid[0] ?? 0, 0);
+
+	const marketPrice$ = derived([ask0Price$, bid0Price$], ([ask, bid]) => marketPrice(ask, bid), 0);
+
+	const domain$ = derived(
+		[ask0Price$, bid0Price$, grouping$],
+		([ask, bid, grouping]) => {
+			const exp = Math.floor(Math.log10(Math.abs(grouping || 1)));
+
+			return [
+				Math.min(30000, boundary(ask, grouping * 200)),
+				Math.max(0.00001, boundary(bid, -grouping * 200))
+			];
+		},
+		[0, 0] as [number, number]
 	);
 
-	const domain$ = derived([asks$, bids$, grouping$, length$], ([asks, bids, grouping, length]) => {
-		const ask = Math.ceil((asks[0]?.[0] ?? 0) / 10) * 10;
-		const bid = Math.floor((bids[0]?.[0] ?? 0) / 10) * 10;
-
-		if (ask === 0 && bid === 0) {
-			return [0, 0] as [number, number];
-		}
-		return [ask + grouping * length, bid - grouping * length] as [number, number];
+	const asks$ = derived([asks0$, domain$], ([asks, domain]) => {
+		return asks.filter((d) => d[0] < domain[0]);
+	});
+	const bids$ = derived([bids0$, domain$], ([bids, domain]) => {
+		return bids.filter((d) => d[0] > domain[1]);
 	});
 
-	const thresholds$ = derived([domain$, grouping$], ([domain, grouping]) => {
-		const res: number[] = [];
-
-		const end = Math.ceil(Math.max(...domain) / grouping) * grouping;
-		let start = Math.floor(Math.min(...domain) / grouping) * grouping;
-
-		if (start === 0 && end === 0) {
-			return res;
-		}
-
-		while (start < end) {
-			res.push(start);
-			start += grouping;
-		}
-
-		return res;
-	});
+	const ready$ = writable(false);
 
 	return {
-		asks$,
-		bids$,
-		grouping$,
-		length$,
+		asks0$,
+		bids0$,
+		asks$: asks$,
+		bids$: bids$,
 		marketPrice$,
 		domain$,
-		thresholds$
+		limits$,
+		grouping$,
+		ready$
 	};
+}
+
+function ask_spreads() {
+	const initial$ = writable<Spread[]>([]);
+
+	return {
+		subscribe: initial$.subscribe,
+		set: (value: Spread[]) => {
+			initial$.update((val) => {
+				let v: typeof val;
+
+				if (val.length === 0) {
+					v = sort(
+						value.filter((d) => within(d[0], [30000, 0.00001])),
+						(a, b) => a[0] - b[0]
+					);
+				} else {
+					const updates = value.filter((d) => within(d[0], [30000, 0.00001]));
+					v = sort(syncAll(val, updates), (a, b) => a[0] - b[0]);
+				}
+
+				return v;
+			});
+		},
+		clear() {
+			initial$.set([]);
+		},
+		get value() {
+			return initial$.value;
+		}
+	};
+}
+
+function bid_spreads() {
+	const initial$ = writable<Spread[]>([]);
+
+	return {
+		subscribe: initial$.subscribe,
+		set: (value: Spread[]) => {
+			initial$.update((val) => {
+				let v: typeof val;
+				if (val.length === 0) {
+					v = sort(
+						value.filter((d) => within(d[0], [30000, 0.00001])),
+						(a, b) => b[0] - a[0]
+					);
+				} else {
+					const updates = value.filter((d) => within(d[0], [30000, 0.00001]));
+					v = sort(syncAll(val, updates), (a, b) => b[0] - a[0]);
+				}
+
+				return v;
+			});
+		},
+		clear() {
+			initial$.set([]);
+		},
+		get value() {
+			return initial$.value;
+		}
+	};
+}
+
+function boundary(value: number, boundBy = 0) {
+	const expValue = Math.floor(Math.log10(Math.abs(value || 1)));
+	const expBoundBy = Math.floor(Math.log10(Math.abs(boundBy || 1)));
+
+	if (Math.sign(expValue) > 0) {
+		return value + boundBy;
+	} else {
+		return value + boundBy * Math.pow(10, expValue + expBoundBy * -1 - 1);
+	}
+}
+
+function fraction(value: number) {
+	return Math.sign(Math.log10(Math.abs(value))) * -1;
 }

@@ -1,7 +1,16 @@
 import type { Snapshot, Spread, Update } from '../types';
-import { domain, marketPrice, syncAll, within } from './utils';
+import {
+	domain,
+	marketPrice,
+	getMaxGroupingValue,
+	syncAll,
+	within,
+	getDefaultGroupingValue,
+	thresholds
+} from './utils';
 import { Exchange } from './exchange';
 import { sort } from 'd3';
+import { ceil, floor } from '$lib/utils';
 
 export class CoinbaseExchange extends Exchange<Snapshot, Update> {
 	#unsubscribe_props: Record<string, any> = {};
@@ -31,32 +40,31 @@ export class CoinbaseExchange extends Exchange<Snapshot, Update> {
 
 	onSnapshot(data: Snapshot): void {
 		const parsed = parseSnapshot(data);
+		const limitsDomain = this.stat.limits$.value || [30000, 0.00001];
 
-		const asks = sort(parsed.asks, (a, b) => a[0] - b[0]);
-		const bids = sort(parsed.bids, (a, b) => b[0] - a[0]);
+		const asks = sort(
+			parsed.asks.filter((d) => within(d[0], limitsDomain)),
+			(a, b) => a[0] - b[0]
+		);
+		const bids = sort(
+			parsed.bids.filter((d) => within(d[0], limitsDomain)),
+			(a, b) => b[0] - a[0]
+		);
 
-		const mn = Math.ceil(asks[0][0]);
-		const mx = Math.ceil(bids[0][0]);
+		this.stat.asks0$.set(asks);
+		this.stat.bids0$.set(bids);
 
-		const mp = marketPrice(mn, mx);
-		const dm = domain(mp, 10, 200);
-
-		const filtereAsks = asks.filter((d) => d[0] < dm[0] && d[0] > dm[1]);
-		this.stat.asks$.set(filtereAsks);
-
-		const filteredBids = bids.filter((d) => d[0] < dm[0] && d[0] > dm[1]);
-		this.stat.bids$.set(filteredBids);
+		this.stat.ready$.set(true);
 	}
 
 	onUpdate(data: Update): void {
-		const update = parseUpadate(data);
-		const domain = this.stat.domain$.value ?? [0, 0];
+		const parsed = parseUpadate(data);
 
-		const asksChanges: [number, number][] = update.asks.filter((d) => within(d[0], domain));
-		this.stat.asks$.update((val) => sort(syncAll(val, asksChanges), (a, b) => a[0] - b[0]));
+		const ask = this.stat.asks0$.value[0];
+		const bid = this.stat.bids0$.value[0];
 
-		const bidsChanges: [number, number][] = update.bids.filter((d) => within(d[0], domain));
-		this.stat.bids$.update((val) => sort(syncAll(val, bidsChanges), (a, b) => b[0] - a[0]));
+		this.stat.asks0$.set(parsed.asks.filter((d) => d[0] > bid[0]));
+		this.stat.bids0$.set(parsed.bids.filter((d) => d[0] < ask[0]));
 	}
 
 	subscribe(): void {

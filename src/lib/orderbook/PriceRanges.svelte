@@ -1,7 +1,8 @@
 <script lang="ts">
-	import { Group, Text } from '$lib/canvas';
+	import { Group } from '$lib/canvas';
 	import type { ScaleLinear } from 'd3';
 	import Range from './PriceRange.svelte';
+	import { floor, round } from '$lib/utils';
 
 	export let grouping = 10;
 	export let step = 2;
@@ -27,11 +28,12 @@
 
 <Group y={-step / 2}>
 	{#each thresholds as price (price)}
+		{@const rounded = round(price, Math.abs(Math.floor(Math.log10(grouping || 1))))}
 		<Range
-			range={price}
+			range={rounded}
 			y={priceRangeScale(price)}
-			opacity={getOpacity(price, grouping * 10)}
-			fontSize={getFontSize(price, grouping * 10)}
+			opacity={getOpacity(rounded, grouping * 10)}
+			fontSize={getFontSize(rounded, grouping * 10)}
 		/>
 	{/each}
 </Group>

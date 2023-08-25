@@ -76,12 +76,18 @@
 	function onPointerLeaveHandler() {
 		opacity = 0;
 	}
+
+	
 </script>
 
 <Group>
 	<Group>
 		<Path
-			d={_area([[marketPrice, 0], ...total])}
+			d={_area([
+				[marketPrice, 0],
+				...total,
+				[priceRangeScale.domain()[0] || 0, totalScale.domain()[1] || 0]
+			])}
 			{width}
 			{height}
 			gradientX={gradientX0}
@@ -93,7 +99,11 @@
 		/>
 
 		<Path
-			d={_line([[marketPrice, 0], ...total])}
+			d={_line([
+				[marketPrice, 0],
+				...total,
+				[priceRangeScale.domain()[0] || 0, totalScale.domain()[1] || 0]
+			])}
 			{width}
 			{height}
 			gradientX={gradientX0}

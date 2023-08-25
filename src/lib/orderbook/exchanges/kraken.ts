@@ -1,6 +1,14 @@
-import { domain, marketPrice, syncAll, within } from './utils';
+import {
+	domain,
+	getDefaultGroupingValue,
+	getMaxGroupingValue,
+	marketPrice,
+	syncAll,
+	within
+} from './utils';
 import { Exchange } from './exchange';
 import { sort } from 'd3';
+import { ceil, floor } from '$lib/utils';
 
 export type Snapshot = [number, Record<string, any>, string, string];
 
@@ -61,17 +69,21 @@ export class KrakenExchange extends Exchange<Snapshot, Update> {
 
 		if (raw[1]?.as && raw[1]?.bs) {
 			const parsed = parseSnapshot(raw);
-			const asks = sort(parsed.asks, (a, b) => a[0] - b[0]);
-			const bids = sort(parsed.bids, (a, b) => b[0] - a[0]);
+			const limitsDomain = exchange.stat.limits$.value || [30000, 0.00001];
 
-			const mn = Math.ceil(asks[0][0]);
-			const mx = Math.ceil(bids[0][0]);
+			const asks = sort(
+				parsed.asks.filter((d) => within(d[0], limitsDomain)),
+				(a, b) => a[0] - b[0]
+			);
+			const bids = sort(
+				parsed.bids.filter((d) => within(d[0], limitsDomain)),
+				(a, b) => b[0] - a[0]
+			);
 
-			const mp = marketPrice(mn, mx);
-			const dm = domain(mp, 10, 200);
+			exchange.stat.asks0$.set(asks);
+			exchange.stat.bids0$.set(bids);
 
-			exchange.stat.asks$.set(asks.filter((d) => within(d[0], dm)));
-			exchange.stat.bids$.set(bids.filter((d) => within(d[0], dm)));
+			exchange.stat.ready$.set(true);
 
 			return;
 		}
@@ -84,13 +96,11 @@ export class KrakenExchange extends Exchange<Snapshot, Update> {
 	onUpdate(data: Update): void {
 		const parsed = parseUpdate(data);
 
-		const domain = this.stat.domain$.value || [0, 0];
+		const ask = this.stat.asks0$.value[0];
+		const bid = this.stat.bids0$.value[0];
 
-		const asks = parsed.asks.filter((d) => within(d[0], domain));
-		const bids = parsed.bids.filter((d) => within(d[0], domain));
-
-		this.stat.asks$.update((val) => sort(syncAll(val, asks), (a, b) => a[0] - b[0]));
-		this.stat.bids$.update((val) => sort(syncAll(val, bids), (a, b) => b[0] - a[0]));
+		this.stat.asks0$.set(parsed.asks.filter((d) => d[0] > bid[0]));
+		this.stat.bids0$.set(parsed.bids.filter((d) => d[0] < ask[0]));
 	}
 
 	subscribe(): void {

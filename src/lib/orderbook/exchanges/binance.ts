@@ -1,7 +1,8 @@
 import type { Spread } from '../types';
-import { domain, marketPrice, syncAll, within } from './utils';
+import { domain, getDefaultGroupingValue, marketPrice, syncAll, within } from './utils';
 import { Exchange } from './exchange';
 import { sort } from 'd3';
+import { ceil, floor } from '$lib/utils';
 
 export type Snapshot = {
 	lastUpdateId: number;
@@ -27,43 +28,20 @@ export type DepthUpdate = {
 	u: number;
 };
 
-function parseSnapshot(raw: Record<string, any>): Snapshot {
+function parse(raw: Record<string, any>) {
 	const asks: [number, number][] = [];
-	for (const d of raw.asks) {
+	for (const d of raw?.asks ?? raw?.a ?? []) {
 		asks.push([parseFloat(d[0]), parseFloat(d[1])]);
 	}
 
 	const bids: [number, number][] = [];
-	for (const d of raw.bids) {
+	for (const d of raw?.bids ?? raw?.b ?? []) {
 		bids.push([parseFloat(d[0]), parseFloat(d[1])]);
 	}
 
 	return {
-		lastUpdateId: raw.lastUpdateId,
 		asks,
 		bids
-	};
-}
-
-function parseUpdate(raw: DepthUpdateRaw): DepthUpdate {
-	const a: [number, number][] = [];
-	for (const d of raw.a) {
-		a.push([parseFloat(d[0]), parseFloat(d[1])]);
-	}
-
-	const b: [number, number][] = [];
-	for (const d of raw.b) {
-		b.push([parseFloat(d[0]), parseFloat(d[1])]);
-	}
-
-	return {
-		E: raw.E,
-		U: raw.U,
-		e: raw.e,
-		s: raw.s,
-		u: raw.u,
-		a,
-		b
 	};
 }
 
@@ -85,20 +63,27 @@ export class BinanceExchange extends Exchange<Snapshot, DepthUpdateRaw> {
 
 		return fetch(snapshotURL)
 			.then((res) => res.json())
-			.then(parseSnapshot)
+			.then(parse)
 			.then((snapshot) => {
-				const asks = sort(snapshot.asks, (a, b) => a[0] - b[0]);
-				const bids = sort(snapshot.bids, (a, b) => b[0] - a[0]);
+				const limitsDomain = this.stat.limits$.value || [30000, 0.00001];
 
-				const mn = Math.ceil(asks[0][0]);
-				const mx = Math.ceil(bids[0][0]);
+				const asks = sort(
+					snapshot.asks.filter((d) => within(d[0], limitsDomain)),
+					(a, b) => a[0] - b[0]
+				);
+				const bids = sort(
+					snapshot.bids.filter((d) => within(d[0], limitsDomain)),
+					(a, b) => b[0] - a[0]
+				);
 
-				const mp = marketPrice(mn, mx);
-				const dm = domain(mp, 10, 200);
+				this.stat.asks0$.set(asks);
+				this.stat.bids0$.set(bids);
+
+				this.stat.ready$.set(true);
 
 				return {
-					asks: asks.filter((d) => within(d[0], dm)),
-					bids: bids.filter((d) => within(d[0], dm))
+					asks,
+					bids
 				};
 			});
 	}
@@ -109,18 +94,14 @@ export class BinanceExchange extends Exchange<Snapshot, DepthUpdateRaw> {
 			exchange.#unsubscribe_props.id = raw.id;
 		}
 		if (raw.e === 'depthUpdate') {
-			exchange.onUpdate(raw);
+			const parsed = parse(raw);
+
+			const ask = exchange.stat.asks0$.value[0];
+			const bid = exchange.stat.bids0$.value[0];
+
+			exchange.stat.asks0$.set(parsed.asks.filter((d) => d[0] > bid[0]));
+			exchange.stat.bids0$.set(parsed.bids.filter((d) => d[0] < ask[0]));
 		}
-	}
-
-	onUpdate(data: DepthUpdateRaw): void {
-		const parsed = parseUpdate(data);
-
-		const asks = parsed.a.filter((d) => within(d[0], this.stat.domain$.value || [0, 0]));
-		const bids = parsed.b.filter((d) => within(d[0], this.stat.domain$.value || [0, 0]));
-
-		this.stat.asks$.update((val) => sort(syncAll(val, asks), (a, b) => a[0] - b[0]));
-		this.stat.bids$.update((val) => sort(syncAll(val, bids), (a, b) => b[0] - a[0]));
 	}
 
 	subscribe(): void {

@@ -1,6 +1,7 @@
 import { sort } from 'd3';
 import { Exchange } from './exchange';
-import { domain, marketPrice, syncAll, within } from './utils';
+import { domain, getDefaultGroupingValue, marketPrice, syncAll, within } from './utils';
+import { ceil, floor } from '$lib/utils';
 
 export type Snapshot = [
 	channelId: number,
@@ -26,31 +27,33 @@ export class BitfinexExchange extends Exchange<Snapshot, Update> {
 		}
 		if (Array.isArray(raw)) {
 			const parsed = parse(raw);
+			
 			if (exchange.#index) {
-				const asks = sort(parsed.asks, (a, b) => a[0] - b[0]);
+				const limitsDomain = exchange.stat.limits$.value || [30000, 0.00001];
 
-				const bids = sort(parsed.bids, (a, b) => b[0] - a[0]);
+				const asks = sort(
+					parsed.asks.filter((d) => within(d[0], limitsDomain)),
+					(a, b) => a[0] - b[0]
+				);
+				const bids = sort(
+					parsed.bids.filter((d) => within(d[0], limitsDomain)),
+					(a, b) => b[0] - a[0]
+				);
 
-				const mn = Math.ceil(asks[0][0]);
-				const mx = Math.ceil(bids[0][0]);
+				exchange.stat.asks0$.set(asks);
+				exchange.stat.bids0$.set(bids);
 
-				const mp = marketPrice(mn, mx);
-				const dm = domain(mp, 10, 200);
-
-				exchange.stat.asks$.set(asks.filter((d) => within(d[0], dm)));
-				exchange.stat.bids$.set(bids.filter((d) => within(d[0], dm)));
+				exchange.stat.ready$.set(true);
 				exchange.#index = 0;
 
 				return;
 			}
 
-			const dm = exchange.stat.domain$.value || [0, 0];
+			const ask = exchange.stat.asks0$.value[0];
+			const bid = exchange.stat.bids0$.value[0];
 
-			const asks = parsed.asks.filter((d) => within(d[0], dm));
-			const bids = parsed.bids.filter((d) => within(d[0], dm));
-
-			exchange.stat.asks$.update((val) => sort(syncAll(val, asks), (a, b) => a[0] - b[0]));
-			exchange.stat.bids$.update((val) => sort(syncAll(val, bids), (a, b) => b[0] - a[0]));
+			exchange.stat.asks0$.set(parsed.asks.filter((d) => d[0] > bid[0]));
+			exchange.stat.bids0$.set(parsed.bids.filter((d) => d[0] < ask[0]));
 		}
 	}
 

@@ -9,8 +9,9 @@
 	import BidsBins from './BidsBins.svelte';
 	import PriceRanges from './PriceRanges.svelte';
 	import { browser } from '$app/environment';
+	import { ceil } from '$lib/utils';
 
-	const { viewportElement$ } = getCanvasViewportContext();
+	const { viewportElement$, vh$ } = getCanvasViewportContext();
 	const { height$, container$ } = getCanvasContext();
 
 	export let name = '';
@@ -113,13 +114,15 @@
 
 	$: marketPriceScaled = priceRangeScale($marketPrice$);
 
+	$: exp = Math.floor(Math.log10(Math.abs(grouping || 1))) - 1;
+
 	// focus on the market price only on mount
 	let focused = false;
 
 	$: if (!focused && browser && $asks$.length && $bids$.length) {
 		$viewportElement$?.scrollTo({
 			left: 0,
-			top: marketPriceScaled - $viewportElement$.clientHeight / 2,
+			top: marketPriceScaled - $vh$ / 2,
 			behavior: 'instant'
 		});
 
@@ -180,7 +183,7 @@
 		/>
 
 		<MarketPrice
-			value={$marketPrice$}
+			value={ceil($marketPrice$, -exp)}
 			x={0}
 			y={marketPriceScaled}
 			{width}

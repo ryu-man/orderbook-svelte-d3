@@ -10,9 +10,6 @@
 
 	export let stroke = 'black';
 
-	const value$ = tweened(value, { duration: 100, easing: cubicOut, delay: Math.random() * 100 });
-	$: value$.set(value);
-
 	const x$ = tweened(x, { duration: 100, easing: cubicOut });
 	$: x$.set(x);
 </script>
@@ -20,7 +17,7 @@
 <Group x={$x$} {y}>
 	<Path d="M{0},{0} h{width}" {stroke} strokeWidth={0.5} />
 	<Text
-		value={$value$.toFixed(0)}
+		{value}
 		x={width}
 		dx={8}
 		baseline="middle"
