@@ -3,7 +3,7 @@
 	import { cubicOut } from 'svelte/easing';
 	import { Text } from '$lib/canvas';
 
-	export let range: number;
+	export let range: number|string;
 	export let y: number = 0;
 	export let opacity = 1;
 	export let fontSize = '10pt';
