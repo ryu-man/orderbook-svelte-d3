@@ -54,5 +54,3 @@ export function setConfigurationContext(): ConfigurationContext {
 		}
 	});
 }
-
-255, 6, 148;
