@@ -132,12 +132,9 @@ export function queu() {
 	const domain$ = derived(
 		[ask0Price$, bid0Price$, grouping$],
 		([ask, bid, grouping]) => {
-			const exp = Math.floor(Math.log10(Math.abs(grouping || 1)));
-
-			return [
-				Math.min(30000, boundary(ask, grouping * 200)),
-				Math.max(0.00001, boundary(bid, -grouping * 200))
-			];
+			const length = 200;
+			const by = length * grouping;
+			return [Math.min(30000, boundary(ask, by)), Math.max(0.00001, boundary(bid, -by))];
 		},
 		[0, 0] as [number, number]
 	);
@@ -226,14 +223,7 @@ function bid_spreads() {
 }
 
 function boundary(value: number, boundBy = 0) {
-	const expValue = Math.floor(Math.log10(Math.abs(value || 1)));
-	const expBoundBy = Math.floor(Math.log10(Math.abs(boundBy || 1)));
-
-	if (Math.sign(expValue) > 0) {
-		return value + boundBy;
-	} else {
-		return value + boundBy * Math.pow(10, expValue + expBoundBy * -1 - 1);
-	}
+	return value + boundBy;
 }
 
 function fraction(value: number) {

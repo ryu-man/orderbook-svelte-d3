@@ -6,7 +6,7 @@
 	import type { Exchange } from './exchanges/exchange';
 	import type { Spread } from './types';
 	import { getConfigurationContext } from '../configuration';
-	import { ceil, floor } from '$lib/utils';
+	import { ceil, floor, expOf } from '$lib/utils';
 
 	const visibility$ = documentVisibilityStore();
 	const { grouping$, theme } = getConfigurationContext();
@@ -40,10 +40,10 @@
 			return [];
 		}
 
-		const fraction = Math.floor(Math.log10(grouping));
+		const exponent = expOf(grouping) + 1;
 
-		const end = ceil(Math.max(...domain), fraction * -1);
-		let start = floor(Math.min(...domain), fraction * -1);
+		const end = ceil(Math.max(...domain), -exponent);
+		let start = floor(Math.min(...domain), -exponent);
 
 		if (start === 0 && end === 0) {
 			return res;
@@ -53,6 +53,7 @@
 			res.push(start);
 			start += grouping;
 		}
+
 		return res;
 	});
 
@@ -113,6 +114,8 @@
 	$: asks = $asks$;
 	$: bids = $bids$;
 	$: marketPrice = $marketPrice$;
+
+	// $: console.log($_thresholds$);
 </script>
 
 <Orderbook

@@ -51,3 +51,7 @@ export function round(value: number, fraction = 0) {
 		return Math.round(value / pow) * pow;
 	}
 }
+
+export function expOf(value: number) {
+	return Math.floor(Math.log10(Math.abs(value || 1)));
+}

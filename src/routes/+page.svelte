@@ -112,7 +112,7 @@
 
 	onMount(() =>
 		aggregationValues$.subscribe((d) => {
-			console.log(d);
+			// console.log(d);
 			if (d.length && $grouping$ === 0) {
 				grouping$.set(d[0] / 100);
 			}
