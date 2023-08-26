@@ -126,6 +126,9 @@
 		.paddingInner(0.4)
 		.paddingOuter(0.3);
 
+	$: step = productScale.step();
+	$: paddingOuter = step * productScale.paddingOuter();
+
 	function onChangeProduct(id: string) {
 		return async () => {
 			from = id;
@@ -253,11 +256,17 @@
 			<div
 				class="orderbooks-names inner absolute w-full h-12 border-t border-white border-opacity-20"
 				style="bottom:0px"
+				style:padding="0 {paddingOuter}px"
 			>
 				<div class="w-full h-full relative">
 					{#each productIds as id, i}
-						<div class="orderbook-name absolute" style:left="{productScale.step() * i + 24}px">
-							{id}
+						<div
+							class="orderbook-name absolute flex justify-start items-center"
+							style:left="0px"
+							style:transform="translateX({step * i}px)"
+							style:width="{step}px"
+						>
+							<span>{id}</span>
 						</div>
 					{/each}
 				</div>
