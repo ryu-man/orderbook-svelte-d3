@@ -14,6 +14,8 @@ export abstract class Exchange<S = any, U = any> {
 	#to: string;
 	#url: string;
 
+	#focus: boolean;
+
 	public asks$ = readonly(this.stat.asks$);
 	public bids$ = readonly(this.stat.bids$);
 	public domain$ = readonly(this.stat.domain$);
@@ -30,6 +32,7 @@ export abstract class Exchange<S = any, U = any> {
 		this.#from = product.from || '';
 		this.#to = product.to || '';
 		this.#url = url;
+		this.#focus = false;
 	}
 
 	connect() {
@@ -88,6 +91,17 @@ export abstract class Exchange<S = any, U = any> {
 		}
 
 		return this.#to;
+	}
+
+	focus(): boolean;
+	focus(value: boolean): this;
+	focus(...args: boolean[]) {
+		if (args.length) {
+			this.#focus = args[0];
+			return this;
+		}
+
+		return this.#focus;
 	}
 
 	get productID() {

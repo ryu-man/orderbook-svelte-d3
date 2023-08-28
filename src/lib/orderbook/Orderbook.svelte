@@ -10,8 +10,9 @@
 	import PriceRanges from './PriceRanges.svelte';
 	import { browser } from '$app/environment';
 	import { ceil } from '$lib/utils';
+	import { tick } from 'svelte';
 
-	const { viewportElement$, vh$ } = getCanvasViewportContext();
+	const { viewportElement$, vh$, vy$ } = getCanvasViewportContext();
 	const { height$, container$ } = getCanvasContext();
 
 	export let name = '';
@@ -39,6 +40,8 @@
 	};
 
 	export let grouping = 10;
+
+	export let focus = false;
 
 	$: thresholds = $thresholds$;
 
@@ -117,16 +120,16 @@
 	$: exp = Math.floor(Math.log10(Math.abs(grouping || 1))) - 1;
 
 	// focus on the market price only on mount
-	let focused = false;
+	let autofocus = true;
 
-	$: if (!focused && browser && $asks$.length && $bids$.length) {
+	$: if (focus && autofocus && browser && $asks$.length && $bids$.length && marketPriceScaled) {
 		$viewportElement$?.scrollTo({
 			left: 0,
-			top: marketPriceScaled - $vh$ / 2,
+			top: height / 2 - $vh$ / 2,
 			behavior: 'instant'
 		});
 
-		focused = true;
+		autofocus = false;
 	}
 </script>
 
