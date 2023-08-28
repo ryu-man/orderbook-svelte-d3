@@ -8,10 +8,8 @@
 	import AksBins from './AksBins.svelte';
 	import BidsBins from './BidsBins.svelte';
 	import PriceRanges from './PriceRanges.svelte';
-	import { browser } from '$app/environment';
 	import { ceil } from '$lib/utils';
 	import { onMount, tick } from 'svelte';
-	import { memorable } from 'svelte-tools';
 	const { viewportElement$, vh$, vy$ } = getCanvasViewportContext();
 	const { height$, container$ } = getCanvasContext();
 
