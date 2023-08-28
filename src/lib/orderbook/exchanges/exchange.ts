@@ -14,7 +14,7 @@ export abstract class Exchange<S = any, U = any> {
 	#to: string;
 	#url: string;
 
-	#focus: boolean;
+	#focus = false;
 	#status: 'on' | 'off' = 'on';
 
 	public asks$ = readonly(this.stat.asks$);
@@ -33,7 +33,6 @@ export abstract class Exchange<S = any, U = any> {
 		this.#from = product.from || '';
 		this.#to = product.to || '';
 		this.#url = url;
-		this.#focus = false;
 	}
 
 	connect() {
@@ -159,6 +158,10 @@ export function queu() {
 	const domain$ = derived(
 		[ask0Price$, bid0Price$, grouping$],
 		([ask, bid, grouping]) => {
+			if (ask === 0 || bid === 0) {
+				return [0, 0];
+			}
+
 			const length = 200;
 			const by = length * grouping;
 			return [Math.min(30000, boundary(ask, by)), Math.max(0.00001, boundary(bid, -by))];

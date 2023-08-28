@@ -32,6 +32,8 @@
 	const thresholds$ = derived([exchange.domain$, grouping$], ([domain, grouping]) => {
 		const res: number[] = [];
 
+		// console.log(exchange.name, domain);
+
 		if (grouping === 0) {
 			return [];
 		}
