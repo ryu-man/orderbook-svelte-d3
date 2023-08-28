@@ -124,6 +124,7 @@
 	{x}
 	{y}
 	name={exchange.fullname}
+	focus={exchange.focus()}
 	asks$={_asks$}
 	bids$={_bids$}
 	thresholds$={_thresholds$}

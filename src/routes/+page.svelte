@@ -28,7 +28,7 @@
 	let from = 'BTC'; // | 'ETH' | 'SOL'
 
 	let exchanges: Exchange[] = [
-		new CoinbaseExchange({ from: from, to: 'USD' }),
+		new CoinbaseExchange({ from: from, to: 'USD' }).focus(true),
 		new BinanceExchange({ from: from.toLowerCase(), to: 'usdt' }),
 		new BitfinexExchange({ from: from, to: 'USD' }),
 		new BitmexExchange({ from: from, to: 'USD' }),
