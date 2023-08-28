@@ -10,8 +10,8 @@
 	import PriceRanges from './PriceRanges.svelte';
 	import { browser } from '$app/environment';
 	import { ceil } from '$lib/utils';
-	import { tick } from 'svelte';
-
+	import { onMount, tick } from 'svelte';
+	import { memorable } from 'svelte-tools';
 	const { viewportElement$, vh$, vy$ } = getCanvasViewportContext();
 	const { height$, container$ } = getCanvasContext();
 
@@ -119,18 +119,32 @@
 
 	$: exp = Math.floor(Math.log10(Math.abs(grouping || 1))) - 1;
 
+	/**********************************************************************************************************/
+	//This logic handles order book auto scroll and focus on the market price
 	// focus on the market price only on mount
 	let autofocus = true;
 
-	$: if (focus && autofocus && browser && $asks$.length && $bids$.length && marketPriceScaled) {
-		$viewportElement$?.scrollTo({
-			left: 0,
-			top: height / 2 - $vh$ / 2,
-			behavior: 'instant'
-		});
+	const [grouping0$, grouping1$] = memorable(grouping);
+	$: grouping0$.set(grouping);
 
-		autofocus = false;
-	}
+	const scrollTop$ = writable(marketPriceScaled - $vh$ / 2);
+	$: scrollTop$.set(marketPriceScaled - $vh$ / 2);
+
+	onMount(() => {
+		if (focus) {
+			return scrollTop$.subscribe((value) => {
+				if (!autofocus && $grouping0$ === $grouping1$) return;
+
+				$viewportElement$?.scrollTo({
+					left: 0,
+					top: value,
+					behavior: 'smooth'
+				});
+
+				autofocus = false;
+			});
+		}
+	});
 </script>
 
 <Group {x} {y}>

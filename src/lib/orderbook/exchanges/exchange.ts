@@ -14,7 +14,8 @@ export abstract class Exchange<S = any, U = any> {
 	#to: string;
 	#url: string;
 
-	#focus: boolean;
+	#focus = false;
+	#status: 'on' | 'off' = 'on';
 
 	public asks$ = readonly(this.stat.asks$);
 	public bids$ = readonly(this.stat.bids$);
@@ -32,7 +33,6 @@ export abstract class Exchange<S = any, U = any> {
 		this.#from = product.from || '';
 		this.#to = product.to || '';
 		this.#url = url;
-		this.#focus = false;
 	}
 
 	connect() {
@@ -46,6 +46,7 @@ export abstract class Exchange<S = any, U = any> {
 		});
 
 		const handler = (e) => {
+			this.#status = 'on';
 			this.subscribe();
 		};
 		const removeEventListener = () => this.ws.removeEventListener('open', handler);
@@ -68,7 +69,7 @@ export abstract class Exchange<S = any, U = any> {
 	}
 
 	isClosed() {
-		return this.ws?.readyState === 3;
+		return this.ws?.readyState === WebSocket.CLOSED;
 	}
 
 	from(): string;
@@ -102,6 +103,17 @@ export abstract class Exchange<S = any, U = any> {
 		}
 
 		return this.#focus;
+	}
+
+	status(): 'on' | 'off';
+	status(value: 'on' | 'off'): this;
+	status(...args: ('on' | 'off')[]) {
+		if (args.length) {
+			this.#status = args[0];
+			return this;
+		}
+
+		return this.#status;
 	}
 
 	get productID() {
@@ -146,6 +158,10 @@ export function queu() {
 	const domain$ = derived(
 		[ask0Price$, bid0Price$, grouping$],
 		([ask, bid, grouping]) => {
+			if (ask === 0 || bid === 0) {
+				return [0, 0];
+			}
+
 			const length = 200;
 			const by = length * grouping;
 			return [Math.min(30000, boundary(ask, by)), Math.max(0.00001, boundary(bid, -by))];

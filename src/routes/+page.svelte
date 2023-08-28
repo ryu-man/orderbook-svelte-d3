@@ -158,7 +158,7 @@
 				exchange.connect();
 			} else {
 				// turn off
-				exchange.disconnect();
+				exchange.status('off').disconnect();
 			}
 		};
 	}
@@ -279,7 +279,12 @@
 							style:transform="translateX({step * i}px)"
 							style:width="{step}px"
 						>
-							<input class="pointer-events-auto" type="checkbox" checked={true} on:change={onChangeStatusHandler(exchange)} />
+							<input
+								class="pointer-events-auto"
+								type="checkbox"
+								checked={exchange.status() === 'on'}
+								on:change={onChangeStatusHandler(exchange)}
+							/>
 							<span>{exchange.fullname}</span>
 						</div>
 					{/each}

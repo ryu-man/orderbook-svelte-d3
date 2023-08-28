@@ -32,6 +32,8 @@
 	const thresholds$ = derived([exchange.domain$, grouping$], ([domain, grouping]) => {
 		const res: number[] = [];
 
+		// console.log(exchange.name, domain);
+
 		if (grouping === 0) {
 			return [];
 		}
@@ -96,7 +98,7 @@
 		const unsubscribe = visibility$.subscribe((value) => {
 			if (value === 'visible') {
 				// Check if websocket is closed
-				if (exchange.isClosed()) {
+				if (exchange.status() === 'on' && exchange.isClosed()) {
 					// Then reconnect the websocket
 					exchange.reconnect();
 				}
