@@ -149,6 +149,19 @@
 			exchanges = exchanges;
 		};
 	}
+
+	function onChangeStatusHandler(exchange: Exchange) {
+		return (e: Event) => {
+			const currentTarget = e.currentTarget as HTMLInputElement;
+			if (currentTarget.checked) {
+				// turn on
+				exchange.connect();
+			} else {
+				// turn off
+				exchange.disconnect();
+			}
+		};
+	}
 </script>
 
 <div
@@ -259,14 +272,15 @@
 				style:padding="0 {paddingOuter}px"
 			>
 				<div class="w-full h-full relative">
-					{#each productIds as id, i}
+					{#each exchanges as exchange, i}
 						<div
-							class="orderbook-name absolute flex justify-start items-center"
+							class="orderbook-name absolute flex justify-start items-center gap-2"
 							style:left="0px"
 							style:transform="translateX({step * i}px)"
 							style:width="{step}px"
 						>
-							<span>{id}</span>
+							<input class="pointer-events-auto" type="checkbox" checked={true} on:change={onChangeStatusHandler(exchange)} />
+							<span>{exchange.fullname}</span>
 						</div>
 					{/each}
 				</div>
