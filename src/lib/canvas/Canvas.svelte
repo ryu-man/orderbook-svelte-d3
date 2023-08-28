@@ -1,8 +1,11 @@
 <script lang="ts">
-	import { setCanvasContext } from './context';
+	import { tick } from 'svelte';
+	import { setCanvasContext, setCanvasViewportContext, type DrawFn } from './context';
 	import { writable, type Writable } from 'svelte/store';
+	import { shouldDraw } from './utils';
 
-	const { ctx$, height$, width$, container$ } = setCanvasContext({
+	const { vh$, vw$, vx$, vy$, viewportElement$ } = setCanvasViewportContext();
+	const { ctx$, height$, width$ } = setCanvasContext({
 		mount,
 		unmount,
 		addEventListener,
@@ -20,34 +23,47 @@
 	let node: HTMLCanvasElement;
 	let mounted = false;
 
-	const queu$ = writable<((ctx: CanvasRenderingContext2D) => void)[]>([]);
+	const queu$ = writable<DrawFn[]>([]);
+	$: queu = $queu$;
+	$: ctx = $ctx$;
 
-	export function draw(queu: ((ctx: CanvasRenderingContext2D) => void)[]) {
-		$ctx$.clearRect(0, 0, $width$, $height$);
+	$: vx = $vx$;
+	$: vy = $vy$;
+	$: vw = $vw$;
+	$: vh = $vh$;
 
-		queu.forEach((draw) => {
-			$ctx$.save();
+	export function draw(queu: DrawFn[]) {
+		const within_view = queu.filter(
+			(child) => child.type === 'group' || shouldDraw(vx, vy, vw, vh, child)
+		);
 
-			draw($ctx$);
+		ctx.clearRect(0, 0, $width$, $height$);
 
-			$ctx$.restore();
-		});
+		for (let index = 0; index < within_view.length; index++) {
+			const element = within_view[index];
+
+			ctx.save();
+
+			element.draw(ctx);
+
+			ctx.restore();
+		}
 	}
 
-	function mount(fn: (ctx: CanvasRenderingContext2D) => void) {
+	function mount(fn: DrawFn) {
 		queu$.update((val) => {
 			return [...val.filter((d) => d !== fn), fn];
 		});
 	}
 
-	function unmount(fn: (ctx: CanvasRenderingContext2D) => void) {
+	function unmount(fn: DrawFn) {
 		queu$.update((val) => {
 			return val.filter((d) => d !== fn);
 		});
 	}
 
 	function addEventListener(type: string, callback) {
-		const handler = (e) => callback(e, $ctx$);
+		const handler = (e) => callback(e, ctx);
 		node.addEventListener(type, handler);
 
 		return () => node.removeEventListener(type, handler);
@@ -58,6 +74,9 @@
 	}
 
 	function canvasMounted(node: HTMLCanvasElement) {
+		vx$.set($viewportElement$.scrollLeft);
+		vy$.set($viewportElement$.scrollTop);
+
 		const ctx = node.getContext('2d') as CanvasRenderingContext2D;
 		(ctx$ as Writable<CanvasRenderingContext2D>).set(ctx);
 
@@ -66,8 +85,7 @@
 		let frameId: number;
 
 		const render = () => {
-			// console.log('canvas::render')
-			draw($queu$);
+			draw(queu);
 
 			frameId = requestAnimationFrame(render);
 		};
@@ -82,17 +100,32 @@
 	}
 
 	function clearCanvas() {
-		queu$.set([]);
-		$ctx$.clearRect(0, 0, $width$, $height$);
+		ctx.clearRect(0, 0, $width$, $height$);
+	}
+
+	function scrollhandler(e: Event) {
+		const currentTarget = e.currentTarget as HTMLDivElement;
+
+		vx$.set(currentTarget.scrollLeft);
+		vy$.set(currentTarget.scrollTop);
 	}
 </script>
 
-<div bind:this={$container$} class="canvas-container" on:scroll>
-	<canvas bind:this={node} use:canvasMounted {width} {height} {style}>
-		{#if mounted}
-			<slot clientHeight={height} clientWidth={width} />
-		{/if}
-	</canvas>
+<div
+	class="canvas-container"
+	bind:this={$viewportElement$}
+	bind:clientWidth={$vw$}
+	bind:clientHeight={$vh$}
+	on:scroll={scrollhandler}
+	on:scroll
+>
+	{#await tick() then _}
+		<canvas bind:this={node} use:canvasMounted {width} {height} {style}>
+			{#if mounted}
+				<slot clientHeight={height} clientWidth={width} {vx} {vy} {vw} {vh} />
+			{/if}
+		</canvas>
+	{/await}
 </div>
 
 <style>

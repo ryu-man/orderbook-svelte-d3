@@ -1,5 +1,7 @@
 <script lang="ts">
+	import { tweened } from 'svelte/motion';
 	import { Group, Bin as BinComponent, Text } from '$lib/canvas';
+	import { colord } from 'colord';
 
 	export let x = 0;
 	export let y = 0;
@@ -13,6 +15,14 @@
 	export let size = 0;
 	export let total = 0;
 
+	export let fill: [string, number][] = [
+		['rgb(68 123 99 / .4)', 0],
+		['rgb(30 62 174 / .4)', 1]
+	];
+
+	// const sizeWidth$ = tweened(sizeWidth, { duration: 1000, easing: cubicOut });
+	// $: sizeWidth$.set(sizeWidth);
+
 	let opacity = 0;
 
 	function onPointerEnterHandler() {
@@ -24,35 +34,35 @@
 	}
 </script>
 
-<Group>
-	<BinComponent
-		{x}
-		{y}
-		{height}
-		width={sizeWidth}
-		{gradientWidth}
-		fill={[
-			['rgb(68 123 99 / .4)', 0],
-			['rgb(30 62 174 / .4)', 1]
-		]}
-	/>
+<Group {y}>
+	<BinComponent {x} y={0} {height} width={sizeWidth} {gradientWidth} {fill} />
 
 	<BinComponent
 		{x}
-		{y}
+		y={0}
 		{height}
 		width={totalWidth}
 		{gradientWidth}
 		fill={[
-			[`rgb(68 123 99 / ${opacity * 0.1})`, 0],
-			[`rgb(30 62 174 / ${opacity * 0.1})`, 1]
+			[
+				colord(fill[0][0])
+					.alpha(opacity * 0.1)
+					.toRgbString(),
+				0
+			],
+			[
+				colord(fill[1][0])
+					.alpha(opacity * 0.1)
+					.toRgbString(),
+				1
+			]
 		]}
 	/>
 
 	<!-- This Bin is for sake of pointer movement detection -->
 	<BinComponent
 		{x}
-		{y}
+		y={0}
 		{height}
 		width={maxWidth}
 		fill="transparent"
@@ -65,7 +75,7 @@
 		value={total.toFixed(1)}
 		x={maxWidth}
 		dx={-8}
-		{y}
+		y={0}
 		dy={height / 2}
 		baseline="middle"
 		align="end"
@@ -77,7 +87,7 @@
 			value={size.toFixed(1)}
 			x={0}
 			dx={8}
-			{y}
+			y={0}
 			dy={height / 2}
 			baseline="middle"
 			fontSize={(9 * height) / step + 'pt'}

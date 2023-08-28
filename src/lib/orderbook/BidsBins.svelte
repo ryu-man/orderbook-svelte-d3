@@ -8,10 +8,14 @@
 		type Line,
 		type ScaleLinear,
 		line,
-		range
+		range,
+		curveStep,
+		curveStepBefore
 	} from 'd3';
 	import { sizeOf, totalOf } from './utils';
 	import BidBin from './BidBin.svelte';
+	import { colord } from 'colord';
+	import { domain } from './exchanges';
 
 	export let priceRangeScale: ScaleLinear<number, number>;
 	export let sizeScale: ScaleLinear<number, number>;
@@ -23,18 +27,33 @@
 	export let step = 0;
 	export let marketPrice = 0;
 
+	export let areaFill: [string, number][] = [
+		['rgb(68 123 99 / .2)', 0],
+		['rgb(30 62 174 / .06)', 1]
+	];
+
+	$: areaStroke = [
+		[colord(areaFill[0][0]).alpha(0.9).toHex(), areaFill[0][1]],
+		[colord(areaFill[1][0]).alpha(0.9).toHex(), areaFill[1][1]]
+	];
+	// export let areaStroke = [
+	// 	['rgb(68 123 99 / .9)', 0],
+	// 	['rgb(30 62 174 / .9)', 1]
+	// ];
+	export let binFill;
+
 	$: filterBins = bins.filter((bin) => bin.length);
 
 	$: marketPriceScaled = priceRangeScale(marketPrice);
 
 	$: _area = area()
-		.y((d) => priceRangeScale(d[0]))
+		.y((d) => Math.max(priceRangeScale(d[0]), marketPriceScaled))
 		.x0((d) => totalScale(0))
 		.x1((d) => Math.min(totalScale(d[1]), totalScale.range()[1]))
 		.curve(curveStepAfter);
 
 	$: _line = line<[number, number]>()
-		.y((d) => priceRangeScale(d[0]))
+		.y((d) => Math.max(priceRangeScale(d[0]), marketPriceScaled))
 		.x((d) => Math.min(totalScale(d[1]), totalScale.range()[1]))
 		.curve(curveStepAfter);
 
@@ -44,6 +63,10 @@
 	$: gradientY1 = 0;
 	$: gradientWidth = Math.min(gradientX1 - gradientX0, sizeScale.range()[1]);
 
+	$: y = priceRangeScale(bins.at(0)?.x1 ?? 0);
+	$: width = totalScale.range()[1];
+	$: height = priceRangeScale.range()[1] - y;
+
 	// #1e3eae
 	// #447b63
 </script>
@@ -51,37 +74,45 @@
 <Group>
 	<Group>
 		<Path
-			d={_area(total)}
+			d={_area([
+				[marketPrice, 0],
+				...total,
+				[priceRangeScale.domain()[1] || 0, totalScale.domain()[1] || 0]
+			])}
+			{y}
+			{height}
+			{width}
 			gradientX={gradientX0}
 			gradientY={gradientY0}
 			gradientWidth={gradientX1 - gradientX0}
 			gradientHeight={gradientY0}
-			fill={[
-				['rgb(68 123 99 / .2)', 0],
-				['rgb(30 62 174 / .06)', 1]
-			]}
+			fill={areaFill}
 			stroke="transparent"
 		/>
 
 		<Path
-			d={_line(total)}
+			d={_line([
+				[marketPrice, 0],
+				...total,
+				[priceRangeScale.domain()[1] || 0, totalScale.domain()[1] || 0]
+			])}
+			{y}
+			{height}
+			{width}
 			gradientX={gradientX0}
 			gradientY={gradientY0}
 			gradientWidth={gradientX1 - gradientX0}
 			gradientHeight={gradientY0}
-			stroke={[
-				['rgb(68 123 99 / 1)', 0],
-				['rgb(30 62 174 / 1)', 1]
-			]}
+			stroke={areaStroke}
 			strokeWidth={1}
 			fill="transparent"
 		/>
 	</Group>
 
-	{#each filterBins as bin, i}
+	{#each filterBins as bin, i (bin.x0)}
 		{@const y0 = priceRangeScale(bin.x0 || 0)}
-		{@const y1 = Math.max(priceRangeScale(bin.x1 || 0), marketPriceScaled)}
-		{@const height = Math.abs(y1 - y0)}
+		{@const y1 = priceRangeScale(bin.x1 || 0)}
+		{@const height = Math.min(Math.abs(y1 - y0), step)}
 
 		{@const total = totalOf(filterBins.slice(0, i + 1))}
 		{@const size = sizeOf(bin)}
@@ -99,6 +130,7 @@
 			{size}
 			{total}
 			{step}
+			fill={binFill}
 		/>
 
 		<!-- <Group>

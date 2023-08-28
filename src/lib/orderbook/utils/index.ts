@@ -1,5 +1,7 @@
 import type { Bin } from 'd3';
-import type { Change, Spread } from './types';
+import type { Change, Spread } from '../types';
+
+export * from './bin';
 
 export function sync(array: Spread[], change: Change) {
 	const [type, price, volume] = change;
@@ -42,10 +44,21 @@ export function last<T>(array: T[]): T {
 }
 
 export function sizeOf(bin: Bin<[number, number], number>) {
-	return bin.reduce((acc, val) => acc + val[1], 0);
+	let size = 0;
+	for (let i = 0; i < bin.length; i++) {
+		const element = bin[i];
+		size += element[1];
+	}
+	return size;
 }
 export function totalOf(bins: Bin<[number, number], number>[]) {
-	return bins.reduce((acc, val) => acc + sizeOf(val), 0);
+	let total = 0;
+	for (let i = 0; i < bins.length; i++) {
+		const element = bins[i];
+		total += sizeOf(element);
+	}
+
+	return total;
 }
 export function maxOf(bin: Bin<[number, number], number>) {
 	return Math.max(...bin.map((d) => d[1]));

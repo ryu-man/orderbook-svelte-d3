@@ -1,110 +1,94 @@
-import { writable } from 'svelte/store';
+import { readonly, writable } from 'svelte/store';
 import type { Change, Snapshot, Spread, Update } from './types';
+import { nice } from 'd3';
 
-export function messages(url: string, productId = 'BTC-USD') {
-	const bids$ = writable([]);
+export function binnable(domain: [number, number]) {
 	const asks$ = writable([]);
+	const bids$ = writable([]);
 
-	let ws = connect(url);
-
-	function connect(url: string) {
-		const ws = new WebSocket(url);
-		ws.onopen = () => {
-			ws.send(
-				JSON.stringify({
-					type: 'subscribe',
-					product_ids: [productId],
-					channels: ['level2_batch']
-				})
-			);
-		};
-
-		ws.onmessage = (e) => {
-			const raw = JSON.parse(e.data);
-
-			switch (raw.type) {
-				case 'snapshot': {
-					const data = parseSnapshot(raw);
-
-					bids$.set(data.bids);
-					asks$.set(data.asks);
-
-					break;
-				}
-				case 'l2update': {
-					const data = {
-						type: raw.type,
-						product_id: raw.product_id,
-						changes: raw.changes.map((change) => [
-							change[0],
-							parseFloat(change[1]),
-							parseFloat(change[2])
-						]),
-						time: new Date(raw.time)
-					} as Update;
-
-					// sync changes
-					data.changes.forEach((change) => {
-						const type = change[0];
-						if (type === 'buy') {
-							bids$.update((val) => sync(val, change));
-						} else {
-							asks$.update((val) => sync(val, change));
-						}
-					});
-					break;
-				}
-			}
-		};
-
-		ws.onerror = (err) => {
-			console.error(err);
-		};
-
-		return ws;
-	}
-
-	function reconnect() {
-		if (ws.readyState !== ws.CLOSED) {
-			ws.close();
-		}
-		ws = connect(url);
-	}
-
-	function isClosed() {
-		return ws.readyState === ws.CLOSED;
-	}
-
-	function disconnect() {
-		return ws.close();
-	}
-
-	return { asks$, bids$, isClosed, reconnect, disconnect };
-}
-
-function parseSnapshot(raw: Record<string, any>): Snapshot {
 	return {
-		asks: raw.asks.map((d) => [parseFloat(d[0]), parseFloat(d[1])]),
-		bids: raw.bids.map((d) => [parseFloat(d[0]), parseFloat(d[1])]),
-		product_id: raw.product_id,
-		time: new Date(raw.time),
-		type: 'snapshot'
+		asks$: readonly(asks$),
+		bids$: readonly(bids$)
 	};
 }
 
-function sync(array: Spread[], change: Change): Spread[] {
-	const [, price, volume] = change;
-	// bid update
-	if (volume) {
-		// add bid
-		const existant = array.find((d) => d[0] === price);
-		if (existant) {
-			existant[1] = volume;
-			return [...array];
+export type Bin = Array<any> & { x0: number; x1: number };
+
+export function bins<T>(domain: [number, number], step = 10) {
+	let value = (d: any) => d;
+
+	const fn = (data: [number, number][]) => {
+		const start = Math.floor(domain[0] / step) * step;
+		const end = Math.ceil(domain[1] / step) * step;
+
+		const bins: Bin[] = [];
+
+		let x0 = start;
+
+		while (x0 < end) {
+			const x1 = x0 + step;
+
+			bins.push(bin(x0, Math.min(x1, end)));
+
+			x0 = x1;
 		}
-		return [...array, [price, volume]];
-	} else {
-		// delete bid
-		return array.filter((d) => d[0] !== price);
+
+		let i = 0;
+		while (i < data.length) {
+			const d = data[i];
+			const v = value(d);
+
+			if (within(v, domain)) {
+				const x0 = Math.floor(v / step) * step;
+				const b = find(bins, x0);
+
+				if (b) {
+					// add value to the existant bin
+					b.push(d);
+				} else {
+					// add new bin
+					const b = bin(x0, x0 + step, d);
+					bins.push(b);
+				}
+			}
+			i++;
+		}
+
+		return bins;
+	};
+
+	fn.value = (cb: (d: T) => number) => {
+		value = cb;
+		return fn;
+	};
+
+	function bin(x0: number, x1: number, value: any[] = []) {
+		const bin: any[] = value;
+		bin.x0 = x0;
+		bin.x1 = x1;
+
+		return bin as Bin;
 	}
+
+	function find(bins: Bin[], x0: number) {
+		let i = 0;
+		while (i < bins.length) {
+			if (bins[i].x0 === x0) {
+				return bins[i];
+			}
+			i++;
+		}
+
+		return null;
+	}
+
+	function within(n: number, range: [number, number]) {
+		const min = Math.min(range[0], range[1]);
+		const max = Math.max(range[0], range[1]);
+
+		return n >= min && n <= max;
+	}
+
+	return fn;
 }
+

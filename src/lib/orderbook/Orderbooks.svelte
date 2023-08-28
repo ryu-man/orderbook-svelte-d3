@@ -2,22 +2,21 @@
 	import { scaleBand } from 'd3';
 	import { Canvas, Group } from '../canvas';
 	import { tick } from 'svelte';
-	import type { Source } from './types';
-	import OrderbookSource from './OrderbookSource.svelte';
+	import ExchangeComponent from './Exchange.svelte';
 	import { setOrderbookContext } from './context';
+	import type { Exchange } from './exchanges/exchange';
 
 	export let padding = {
-		top: 48,
-		right: 24,
+		top: 0,
+		right: 0,
 		bottom: 0,
-		left: 48
+		left: 0
 	};
+
 	export let width = 0;
 	export let height = 0;
 
-	export let sources: Source[];
-	export let domain: [number, number];
-	export let grouping = 10;
+	export let exchanges: Exchange[];
 
 	const { padding$ } = setOrderbookContext();
 	$: padding$.set(padding);
@@ -25,19 +24,17 @@
 	let clientWidth = 0;
 	let clientHeight = 0;
 
-	$: innerWidth = clientWidth - padding.left - padding.right;
-	$: innerHeight = clientHeight - padding.top - padding.bottom;
+	$: maxHeight = Math.max(clientHeight, 24 * 300);
 
-	$: productIds = sources.map((d) => d.productId);
+	$: innerWidth = clientWidth - padding.left - padding.right;
+	$: innerHeight = maxHeight - padding.top - padding.bottom;
+
+	$: productIds = exchanges.map((d) => d.name);
 	$: productScale = scaleBand()
 		.domain(productIds)
 		.range([0, innerWidth])
-		.paddingInner(0.2)
-		.paddingOuter(0);
-
-	$: thresholds = getThresholds(domain, grouping);
-
-	$: maxHeight = Math.max(innerHeight, thresholds.length * 24);
+		.paddingInner(0.4)
+		.paddingOuter(0.3);
 
 	function resizer(node: HTMLDivElement) {
 		clientWidth = node.clientWidth;
@@ -73,16 +70,14 @@
 
 <div class="orderbooks" style="width: 100%; height: 100%;" use:resizer>
 	<Canvas height={maxHeight} width={clientWidth}>
-		<Group x={padding.left} y={padding.top}>
+		<Group x={padding.left} y={padding.top} width={innerWidth} height={maxHeight} clip>
 			{#await tick() then _}
-				{#each sources as { productId, url } (productId)}
-					<OrderbookSource
-						{productId}
-						{url}
-						x={productScale(productId)}
+				{#each exchanges as exchange (exchange.name)}
+					<ExchangeComponent
+						{exchange}
+						x={productScale(exchange.name)}
 						width={productScale.bandwidth()}
 						height={maxHeight}
-						{thresholds}
 					/>
 				{/each}
 			{/await}
