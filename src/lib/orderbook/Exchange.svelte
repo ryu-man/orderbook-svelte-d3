@@ -96,7 +96,7 @@
 		const unsubscribe = visibility$.subscribe((value) => {
 			if (value === 'visible') {
 				// Check if websocket is closed
-				if (exchange.isClosed()) {
+				if (exchange.status() === 'on' && exchange.isClosed()) {
 					// Then reconnect the websocket
 					exchange.reconnect();
 				}

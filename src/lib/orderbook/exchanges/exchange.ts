@@ -15,6 +15,7 @@ export abstract class Exchange<S = any, U = any> {
 	#url: string;
 
 	#focus: boolean;
+	#status: 'on' | 'off' = 'on';
 
 	public asks$ = readonly(this.stat.asks$);
 	public bids$ = readonly(this.stat.bids$);
@@ -46,6 +47,7 @@ export abstract class Exchange<S = any, U = any> {
 		});
 
 		const handler = (e) => {
+			this.#status = 'on';
 			this.subscribe();
 		};
 		const removeEventListener = () => this.ws.removeEventListener('open', handler);
@@ -68,7 +70,7 @@ export abstract class Exchange<S = any, U = any> {
 	}
 
 	isClosed() {
-		return this.ws?.readyState === 3;
+		return this.ws?.readyState === WebSocket.CLOSED;
 	}
 
 	from(): string;
@@ -102,6 +104,17 @@ export abstract class Exchange<S = any, U = any> {
 		}
 
 		return this.#focus;
+	}
+
+	status(): 'on' | 'off';
+	status(value: 'on' | 'off'): this;
+	status(...args: ('on' | 'off')[]) {
+		if (args.length) {
+			this.#status = args[0];
+			return this;
+		}
+
+		return this.#status;
 	}
 
 	get productID() {
