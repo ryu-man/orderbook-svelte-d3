@@ -62,7 +62,6 @@
     "flubber": "^0.4.2",
     "konva": "^9.2.0",
     "svelte-konva": "^0.3.0",
-    "svelte-legos": "^0.2.1",
-    "svelte-tools": "^1.2.6"
+    "svelte-legos": "^0.2.1"
   }
 }

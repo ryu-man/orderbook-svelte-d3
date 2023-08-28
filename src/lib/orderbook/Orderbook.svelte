@@ -4,14 +4,12 @@
 	import type { Spread } from './types';
 	import { sizeOf, totalOf } from './utils';
 	import MarketPrice from './MarketPrice.svelte';
-	import { writable, type Readable } from 'svelte/store';
+	import { writable, type Readable, derived } from 'svelte/store';
 	import AksBins from './AksBins.svelte';
 	import BidsBins from './BidsBins.svelte';
 	import PriceRanges from './PriceRanges.svelte';
-	import { browser } from '$app/environment';
 	import { ceil } from '$lib/utils';
 	import { onMount, tick } from 'svelte';
-	import { memorable } from 'svelte-tools';
 	const { viewportElement$, vh$, vy$ } = getCanvasViewportContext();
 	const { height$, container$ } = getCanvasContext();
 
@@ -124,23 +122,26 @@
 	// focus on the market price only on mount
 	let autofocus = true;
 
-	const [grouping0$, grouping1$] = memorable(grouping);
-	$: grouping0$.set(grouping);
+	let oldGrouping = 0;
 
-	const scrollTop$ = writable(marketPriceScaled - $vh$ / 2);
-	$: scrollTop$.set(marketPriceScaled - $vh$ / 2);
+	const grouping$ = writable(0);
+	$: grouping$.set(grouping);
 
 	onMount(() => {
 		if (focus) {
-			return scrollTop$.subscribe((value) => {
-				if (!autofocus && $grouping0$ === $grouping1$) return;
+			return grouping$.subscribe((value) => {
+				if (value <= 0) return;
+				if (!autofocus && grouping === oldGrouping) return;
 
-				$viewportElement$?.scrollTo({
-					left: 0,
-					top: value,
-					behavior: 'smooth'
-				});
+				setTimeout(() => {
+					$viewportElement$?.scrollTo({
+						left: 0,
+						top: marketPriceScaled - $vh$ / 2,
+						behavior: 'smooth'
+					});
+				}, 1000);
 
+				oldGrouping = grouping;
 				autofocus = false;
 			});
 		}
