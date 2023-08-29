@@ -116,8 +116,6 @@
 	$: asks = $asks$;
 	$: bids = $bids$;
 	$: marketPrice = $marketPrice$;
-
-	// $: console.log($_thresholds$);
 </script>
 
 <Orderbook
