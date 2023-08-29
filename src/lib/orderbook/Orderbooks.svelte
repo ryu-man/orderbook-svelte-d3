@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { scaleBand } from 'd3';
-	import { Canvas, Group } from '../canvas';
+	import { Canvas, Group, Clip } from '../canvas';
 	import { tick } from 'svelte';
 	import ExchangeComponent from './Exchange.svelte';
 	import { setOrderbookContext } from './context';
 	import type { Exchange } from './exchanges/exchange';
+	import ViewportClipper from './ViewportClipper.svelte';
 
 	export let padding = {
 		top: 0,
@@ -70,18 +71,20 @@
 
 <div class="orderbooks" style="width: 100%; height: 100%;" use:resizer>
 	<Canvas height={maxHeight} width={clientWidth}>
-		<Group x={padding.left} y={padding.top} width={innerWidth} height={maxHeight} clip>
-			{#await tick() then _}
-				{#each exchanges as exchange (exchange.name)}
-					<ExchangeComponent
-						{exchange}
-						x={productScale(exchange.name)}
-						width={productScale.bandwidth()}
-						height={maxHeight}
-					/>
-				{/each}
-			{/await}
-		</Group>
+		<ViewportClipper>
+			<Group x={padding.left} y={padding.top} width={innerWidth} height={maxHeight} clip>
+				{#await tick() then _}
+					{#each exchanges as exchange (exchange.name)}
+						<ExchangeComponent
+							{exchange}
+							x={productScale(exchange.name)}
+							width={productScale.bandwidth()}
+							height={maxHeight}
+						/>
+					{/each}
+				{/await}
+			</Group>
+		</ViewportClipper>
 	</Canvas>
 </div>
 

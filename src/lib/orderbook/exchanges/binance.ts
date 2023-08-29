@@ -85,6 +85,9 @@ export class BinanceExchange extends Exchange<Snapshot, DepthUpdateRaw> {
 					asks,
 					bids
 				};
+			})
+			.catch((err) => {
+				return { asks: [], bids: [] };
 			});
 	}
 

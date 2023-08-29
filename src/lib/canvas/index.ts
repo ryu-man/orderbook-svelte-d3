@@ -4,4 +4,6 @@ export { default as Rect } from './Rect.svelte';
 export { default as Path } from './Path.svelte';
 export { default as Group } from './Group.svelte';
 export { default as Bin } from './Bin.svelte';
+export { default as Clip } from './Clip.svelte';
+
 export * from './context';
