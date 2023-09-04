@@ -1,15 +1,15 @@
 <script lang="ts">
+	import { onMount, tick } from 'svelte';
+	import { writable, type Readable, derived } from 'svelte/store';
 	import { scaleLinear, min, max, bin, reverse, type Bin, sort } from 'd3';
 	import { Text, Group, Path, getCanvasContext, getCanvasViewportContext } from '../canvas';
-	import type { Spread } from './types';
-	import { sizeOf, totalOf } from './utils';
 	import MarketPrice from './MarketPrice.svelte';
-	import { writable, type Readable, derived } from 'svelte/store';
 	import AksBins from './AksBins.svelte';
 	import BidsBins from './BidsBins.svelte';
 	import PriceRanges from './PriceRanges.svelte';
-	import { ceil } from '$lib/utils';
-	import { onMount, tick } from 'svelte';
+	import { ceil, sizeOf, totalOf } from '$lib/utils';
+	import type { OrderbookTheme, Spread } from '$lib/types';
+
 	const { viewportElement$, vh$, vy$ } = getCanvasViewportContext();
 	const { height$, container$ } = getCanvasContext();
 
@@ -28,14 +28,38 @@
 	export let marketPrice$: Readable<number>;
 	export let thresholds$: Readable<number[]>;
 
-	export let askTheme: {
-		binFill: [[string, number], [string, number]];
-		areaFill: [[string, number], [string, number]];
+	export let theme: OrderbookTheme = {
+		askBin: [
+			['rgb(204 46 209 / .1)', 0],
+			['rgb(255 6 148 / .6)', 1]
+		],
+		askArea: [
+			['rgb(204 46 209 / .2)', 0],
+			['rgb(255 6 148 / .06)', 1]
+		],
+		bidBin: [
+			['rgb(68 123 99 / .1)', 0],
+			['rgb(28 180 232 / .6)', 1]
+		],
+		bidArea: [
+			['rgb(68 123 99 / .2)', 0],
+			['rgb(28 180 232 / .06)', 1]
+		],
+		marketPrice: {
+			line: 'rgb(255 255 255 / 1)',
+			text: 'rgb(255 255 255 / 1)'
+		},
+		boundaries: {
+			line: 'rgb(255 255 255 / 1)',
+			text: 'rgb(255 255 255 / 1)'
+		},
+		priceTicks: {
+			primary: 'rgb(255 255 255 / 0.9)',
+			secondary: 'rgb(255 255 255 / 0.4)'
+		}
 	};
-	export let bidTheme: {
-		binFill: [[string, number], [string, number]];
-		areaFill: [[string, number], [string, number]];
-	};
+
+	$: console.log(theme);
 
 	export let grouping = 10;
 
@@ -154,24 +178,24 @@
 
 		<!-- Depth Hitogram Levels -->
 		<Group y={priceRangeScale(asksDepthPriceRange || 0) - step / 2}>
-			<Path d={`M0,0 h${width}`} stroke="rgb(255 255 255 / 1)" />
+			<Path d={`M0,0 h${width}`} stroke={theme.boundaries.line} />
 			<Text
 				value={asksDepthPriceRange?.toFixed(0) ?? '0'}
 				x={width}
 				dx={8}
 				baseline="middle"
-				color="white"
+				color={theme.boundaries.text}
 			/>
 		</Group>
 
 		<Group y={priceRangeScale(bidsDepthPriceRange || 0) - step / 2}>
-			<Path d={`M0,0 h${width}`} stroke="rgb(255 255 255 / 1)" />
+			<Path d={`M0,0 h${width}`} stroke={theme.boundaries.line} />
 			<Text
 				value={bidsDepthPriceRange?.toFixed(0) ?? '0'}
 				x={width}
 				dx={8}
 				baseline="middle"
-				color="white"
+				color={theme.boundaries.text}
 			/>
 		</Group>
 		<!--  -->
@@ -184,8 +208,8 @@
 			bins={asksBins}
 			total={asksTotal}
 			marketPrice={$marketPrice$}
-			areaFill={askTheme.areaFill}
-			binFill={askTheme.binFill}
+			areaFill={theme.askArea}
+			binFill={theme.askBin}
 		/>
 
 		<BidsBins
@@ -196,8 +220,8 @@
 			total={bidsTotal}
 			bins={bidsBins}
 			marketPrice={$marketPrice$}
-			areaFill={bidTheme.areaFill}
-			binFill={bidTheme.binFill}
+			areaFill={theme.bidArea}
+			binFill={theme.bidBin}
 		/>
 
 		<MarketPrice
@@ -205,7 +229,8 @@
 			x={0}
 			y={marketPriceScaled}
 			{width}
-			stroke="rgb(70 60 188)"
+			stroke={theme.marketPrice.line}
+			fill={theme.marketPrice.text}
 		/>
 	{/if}
 </Group>

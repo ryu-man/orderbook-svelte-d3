@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Group, Bin as BinComponent, Text, Path } from '$lib/canvas';
+	import { colord } from 'colord';
 	import {
 		area,
 		curveStepAfter,
@@ -12,10 +12,9 @@
 		curveStep,
 		curveStepBefore
 	} from 'd3';
-	import { sizeOf, totalOf } from './utils';
+	import { Group, Bin as BinComponent, Text, Path } from '$lib/canvas';
+	import { sizeOf, totalOf } from '$lib/utils';
 	import BidBin from './BidBin.svelte';
-	import { colord } from 'colord';
-	import { domain } from './exchanges';
 
 	export let priceRangeScale: ScaleLinear<number, number>;
 	export let sizeScale: ScaleLinear<number, number>;

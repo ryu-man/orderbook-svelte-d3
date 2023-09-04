@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Group, Bin as BinComponent, Text, Path } from '$lib/canvas';
+	import { colord } from 'colord';
 	import {
 		type Area,
 		type Bin,
@@ -12,9 +12,9 @@
 		curveStepAfter,
 		curveStep
 	} from 'd3';
-	import { sizeOf, totalOf } from './utils';
+	import { Group, Bin as BinComponent, Text, Path } from '$lib/canvas';
+	import { sizeOf, totalOf } from '$lib/utils';
 	import AskBin from './AskBin.svelte';
-	import { colord } from 'colord';
 
 	export let priceRangeScale: ScaleLinear<number, number>;
 	export let sizeScale: ScaleLinear<number, number>;
@@ -76,8 +76,6 @@
 	function onPointerLeaveHandler() {
 		opacity = 0;
 	}
-
-	
 </script>
 
 <Group>

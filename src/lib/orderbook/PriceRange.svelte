@@ -3,10 +3,12 @@
 	import { cubicOut } from 'svelte/easing';
 	import { Text } from '$lib/canvas';
 
-	export let range: number|string;
+	export let range: number | string;
 	export let y: number = 0;
-	export let opacity = 1;
 	export let fontSize = '10pt';
+	export let color = 'rgb( 255 255 255 / 1)';
+
+	$: console.log(color);
 
 	const y$ = tweened(y, { duration: 300, easing: cubicOut });
 	$: y$.set(y);
@@ -18,7 +20,7 @@
 	dx={-8}
 	dy={0}
 	value={range.toString()}
-	color="rgb(255 255 255 / {opacity})"
+	{color}
 	fill="rgb(255 255 255 / 0)"
 	align="end"
 	baseline="middle"

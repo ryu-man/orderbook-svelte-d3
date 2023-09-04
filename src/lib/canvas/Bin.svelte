@@ -21,10 +21,10 @@
 
 	export let fill: string | [string, number][] = 'black';
 
-	const width$ = tweened(width, { duration: 400, easing: cubicOut, delay: Math.random() * 600 });
+	const width$ = tweened(width, { duration: 200, easing: cubicOut, delay: Math.random() * 100 });
 	$: width$.set(width);
 
-	const y$ = tweened(y, { duration: 400, easing: cubicOut });
+	const y$ = tweened(y, { duration: 200, easing: cubicOut });
 	$: y$.set(y);
 
 	let path: Path2D;

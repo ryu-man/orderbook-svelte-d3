@@ -1,0 +1,43 @@
+<script lang="ts">
+	import { cubicOut } from 'svelte/easing';
+	import { tweened } from 'svelte/motion';
+
+	export let total = 0;
+	export let size = 0;
+	export let price = 0;
+	export let width = 0;
+
+	export let backgroundColor: string;
+	export let textColor: string;
+
+	export let fractionDigits = 0;
+
+	const width$ = tweened(width, { duration: 100, easing: cubicOut });
+	$: width$.set(width);
+</script>
+
+<div class="spread-item flex relative">
+	<div
+		class="flex items-center pl-2"
+		style:background-color={backgroundColor}
+		style:color={textColor}
+		style:width={$width$ + '%'}
+	>
+		<span>{price.toFixed(Math.max(3, fractionDigits))}</span>
+	</div>
+	<div class="absolute top-0 bottom-0 right-2 flex items-center gap-4 text-white">
+		<span>{total.toFixed(8)}</span>
+		<span>{size.toFixed(8)}</span>
+	</div>
+</div>
+
+<style lang="postcss">
+	.spread-item {
+		flex: 1;
+		min-height: 0;
+	}
+
+	.spread-item:hover {
+		filter: brightness(1.2);
+	}
+</style>

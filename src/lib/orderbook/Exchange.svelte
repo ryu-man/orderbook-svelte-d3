@@ -9,7 +9,7 @@
 	import { ceil, floor, expOf } from '$lib/utils';
 
 	const visibility$ = documentVisibilityStore();
-	const { grouping$, theme } = getConfigurationContext();
+	const { grouping$, theme$ } = getConfigurationContext();
 
 	export let exchange: Exchange;
 
@@ -25,9 +25,6 @@
 	let marketPrice: number = 0;
 
 	const ms = 1000;
-
-	const askTheme$ = theme.asks$;
-	const bidTheme$ = theme.bids$;
 
 	const thresholds$ = derived([exchange.domain$, grouping$], ([domain, grouping]) => {
 		const res: number[] = [];
@@ -129,7 +126,5 @@
 	bids$={_bids$}
 	thresholds$={_thresholds$}
 	marketPrice$={_marketPrice$}
-	askTheme={$askTheme$}
-	bidTheme={$bidTheme$}
-	grouping={$grouping$}
+	theme={$theme$}
 />

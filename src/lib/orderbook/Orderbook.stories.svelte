@@ -19,26 +19,24 @@
 	import { scaleBand } from 'd3';
 	import { derived } from 'svelte/store';
 	import { Configuration, setConfigurationContext } from '$lib/configuration';
+	import '../../app.css';
 
 	setConfigurationContext();
 
-	const { grouping$, theme } = getConfigurationContext();
-
-	const askTheme$ = theme.asks$;
-	const bidTheme$ = theme.bids$;
+	const { grouping$, theme$ } = getConfigurationContext();
 
 	const currencies = ['BTC', 'ETH', 'XRP'];
 
 	let from = 'BTC'; // | 'ETH' | 'SOL'
 
 	let exchanges: Exchange[] = [
-		new CoinbaseExchange({ from: from, to: 'USD' }).focus(true),
-		new BinanceExchange({ from: from.toLowerCase(), to: 'usdt' }),
-		new BitfinexExchange({ from: from, to: 'UST' }),
-		new BitmexExchange({ from: from, to: 'USD' }),
-		new BybitExchange({ from: from, to: 'USDT' }),
-		new BitgetExchange({ from: from, to: 'USDT' }),
-		new KrakenExchange({ from: from, to: 'USD' })
+		new CoinbaseExchange({ from: from, to: 'USD' }).focus(true)
+		// new BinanceExchange({ from: from.toLowerCase(), to: 'usdt' }),
+		// new BitfinexExchange({ from: from, to: 'UST' }),
+		// new BitmexExchange({ from: from, to: 'USD' }),
+		// new BybitExchange({ from: from, to: 'USDT' }),
+		// new BitgetExchange({ from: from, to: 'USDT' }),
+		// new KrakenExchange({ from: from, to: 'USD' })
 	];
 
 	let clientWidth = 0;
@@ -179,7 +177,7 @@
 			class="settings-bar absolute top-0 left-0 z-10 w-full border-b border-white border-opacity-20"
 			style="backdrop-filter: blur(6px);"
 		>
-			<div class="w-full p-4 box-border flex gap-6">
+			<div class="w-full p-4 box-border flex justify-between gap-6">
 				<div class="flex gap-2">
 					<div class="flex items-center gap-2">
 						{#each currencies as currency}
@@ -206,19 +204,19 @@
 				</div>
 
 				<div class="flex items-center">
-					<span class="text-4xl text-white font-black upp">Ask Theme</span>
+					<span class="text-2xl text-white font-black upp">Ask Theme</span>
 				</div>
 
 				<div class="flex flex-col">
 					<div class="text-white mb-2">Bin Colors</div>
 					<div class="flex gap-2">
 						<ColorPickr
-							value={colord($askTheme$.binFill[0][0]).toHex()}
-							on:change={(e) => ($askTheme$.binFill[0][0] = e.detail)}
+							value={colord($theme$.askBin[0][0]).toHex()}
+							on:change={(e) => ($theme$.askBin[0][0] = e.detail)}
 						/>
 						<ColorPickr
-							value={colord($askTheme$.binFill[1][0]).toHex()}
-							on:change={(e) => ($askTheme$.binFill[1][0] = e.detail)}
+							value={colord($theme$.askBin[1][0]).toHex()}
+							on:change={(e) => ($theme$.askBin[1][0] = e.detail)}
 						/>
 					</div>
 				</div>
@@ -227,30 +225,30 @@
 					<div class="text-white mb-2">Area Colors</div>
 					<div class="flex gap-2">
 						<ColorPickr
-							value={colord($askTheme$.areaFill[0][0]).toHex()}
-							on:change={(e) => ($askTheme$.areaFill[0][0] = e.detail)}
+							value={colord($theme$.askArea[0][0]).toHex()}
+							on:change={(e) => ($theme$.askArea[0][0] = e.detail)}
 						/>
 						<ColorPickr
-							value={colord($askTheme$.areaFill[1][0]).toHex()}
-							on:change={(e) => ($askTheme$.areaFill[1][0] = e.detail)}
+							value={colord($theme$.askArea[1][0]).toHex()}
+							on:change={(e) => ($theme$.askArea[1][0] = e.detail)}
 						/>
 					</div>
 				</div>
 
 				<div class="flex items-center">
-					<span class="text-4xl text-white font-black">Bid Theme</span>
+					<span class="text-2xl text-white font-black">Bid Theme</span>
 				</div>
 
 				<div class="flex flex-col">
 					<div class="text-white mb-2">Bin Colors</div>
 					<div class="flex gap-2">
 						<ColorPickr
-							value={colord($bidTheme$.binFill[0][0]).toHex()}
-							on:change={(e) => ($bidTheme$.binFill[0][0] = e.detail)}
+							value={colord($theme$.bidBin[0][0]).toHex()}
+							on:change={(e) => ($theme$.bidBin[0][0] = e.detail)}
 						/>
 						<ColorPickr
-							value={colord($bidTheme$.binFill[1][0]).toHex()}
-							on:change={(e) => ($bidTheme$.binFill[1][0] = e.detail)}
+							value={colord($theme$.bidBin[1][0]).toHex()}
+							on:change={(e) => ($theme$.bidBin[1][0] = e.detail)}
 						/>
 					</div>
 				</div>
@@ -259,12 +257,54 @@
 					<div class="text-white mb-2">Area Colors</div>
 					<div class="flex gap-2">
 						<ColorPickr
-							value={colord($bidTheme$.areaFill[0][0]).toHex()}
-							on:change={(e) => ($bidTheme$.areaFill[0][0] = e.detail)}
+							value={colord($theme$.bidArea[0][0]).toHex()}
+							on:change={(e) => ($theme$.bidArea[0][0] = e.detail)}
 						/>
 						<ColorPickr
-							value={colord($bidTheme$.areaFill[1][0]).toHex()}
-							on:change={(e) => ($bidTheme$.areaFill[1][0] = e.detail)}
+							value={colord($theme$.bidArea[1][0]).toHex()}
+							on:change={(e) => ($theme$.bidArea[1][0] = e.detail)}
+						/>
+					</div>
+				</div>
+
+				<div class="flex items-center">
+					<span class="text-2xl text-white font-black upp">Boundaries Theme</span>
+				</div>
+
+				<div class="flex gap-2">
+					<div class="flex flex-col">
+						<div class="text-white mb-2">Text</div>
+						<ColorPickr
+							value={colord($theme$.boundaries.text).toHex()}
+							on:change={(e) => ($theme$.boundaries.text = e.detail)}
+						/>
+					</div>
+					<div class="flex flex-col">
+						<div class="text-white mb-2">Line</div>
+						<ColorPickr
+							value={colord($theme$.boundaries.line).toHex()}
+							on:change={(e) => ($theme$.boundaries.line = e.detail)}
+						/>
+					</div>
+				</div>
+
+				<div class="flex items-center">
+					<span class="text-2xl text-white font-black upp">Market Price Ind Theme</span>
+				</div>
+
+				<div class="flex gap-2">
+					<div class="flex flex-col">
+						<div class="text-white mb-2">Text</div>
+						<ColorPickr
+							value={colord($theme$.marketPrice.text).toHex()}
+							on:change={(e) => ($theme$.marketPrice.text = e.detail)}
+						/>
+					</div>
+					<div class="flex flex-col">
+						<div class="text-white mb-2">Line</div>
+						<ColorPickr
+							value={colord($theme$.marketPrice.line).toHex()}
+							on:change={(e) => ($theme$.marketPrice.line = e.detail)}
 						/>
 					</div>
 				</div>

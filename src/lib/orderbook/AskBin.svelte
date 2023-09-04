@@ -1,8 +1,7 @@
 <script lang="ts">
-	import { tweened } from 'svelte/motion';
 	import { Group, Bin as BinComponent, Text } from '$lib/canvas';
-	import { cubicOut } from 'svelte/easing';
 	import { colord } from 'colord';
+	import { format } from './utils';
 
 	export let x = 0;
 	export let y = 0;
@@ -74,7 +73,7 @@
 	<!--  -->
 
 	<Text
-		value={total.toFixed(1)}
+		value={format(total)}
 		x={maxWidth}
 		dx={-8}
 		y={0}
@@ -86,7 +85,7 @@
 
 	{#if height > 10}
 		<Text
-			value={size.toFixed(1)}
+			value={format(size)}
 			x={0}
 			dx={8}
 			y={0}

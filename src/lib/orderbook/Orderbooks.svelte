@@ -1,7 +1,7 @@
 <script lang="ts">
+	import { tick } from 'svelte';
 	import { scaleBand } from 'd3';
 	import { Canvas, Group, Clip } from '../canvas';
-	import { tick } from 'svelte';
 	import ExchangeComponent from './Exchange.svelte';
 	import { setOrderbookContext } from './context';
 	import type { Exchange } from './exchanges/exchange';
