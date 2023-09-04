@@ -54,6 +54,7 @@
 				{@const total = getTotalOf(grouping)(data.slice(0, i))}
 				{@const size = getSizeOf(grouping)(item)}
 				{@const price = getPrice(grouping)(item)}
+				{@const exponent = Math.min(2, Math.log10(grouping || 1))}
 
 				<div class="flex-1 flex min-h-0" animate:flip={{ duration: 100 }}>
 					<SpreadItem
@@ -63,7 +64,8 @@
 						width={scale(total)}
 						{backgroundColor}
 						{textColor}
-						fractionDigits={Math.abs(Math.floor(Math.log10(grouping || 1))) + 1}
+						fractionDigits={Math.abs(Math.floor(exponent)) +
+							Math.ceil(exponent - Math.floor(exponent))}
 					/>
 				</div>
 			{/each}

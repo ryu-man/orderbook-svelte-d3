@@ -23,7 +23,7 @@
 		style:color={textColor}
 		style:width={$width$ + '%'}
 	>
-		<span>{price.toFixed(Math.max(3, fractionDigits))}</span>
+		<span>{price.toFixed(Math.max(2, fractionDigits))}</span>
 	</div>
 	<div class="absolute top-0 bottom-0 right-2 flex items-center gap-4 text-white">
 		<span>{total.toFixed(8)}</span>
