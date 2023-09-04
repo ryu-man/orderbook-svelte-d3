@@ -18,8 +18,8 @@
 
 	setConfigurationContext();
 
-	// const exchange = new CoinbaseExchange({ from: 'XRP', to: 'USD' });
-	const exchange = new CoinbaseExchange({ from: 'BTC', to: 'USD' });
+	const exchange = new CoinbaseExchange({ from: 'XRP', to: 'USD' });
+	// const exchange = new CoinbaseExchange({ from: 'BTC', to: 'USD' });
 	let grouping = 0;
 </script>
 
