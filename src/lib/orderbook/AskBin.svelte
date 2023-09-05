@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Group, Bin as BinComponent, Text } from '$lib/canvas';
 	import { colord } from 'colord';
-	import { format } from './utils';
+	import { format } from '$lib/utils';
 
 	export let x = 0;
 	export let y = 0;

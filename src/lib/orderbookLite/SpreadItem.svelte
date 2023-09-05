@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { cubicOut } from 'svelte/easing';
 	import { tweened } from 'svelte/motion';
+	import { format } from '$lib/utils';
 
 	export let total = 0;
 	export let size = 0;
@@ -26,8 +27,8 @@
 		<span>{price.toFixed(Math.max(2, fractionDigits))}</span>
 	</div>
 	<div class="absolute top-0 bottom-0 right-2 flex items-center gap-4 text-white">
-		<span>{total.toFixed(8)}</span>
-		<span>{size.toFixed(8)}</span>
+		<span>{format(total)}</span>
+		<span>{format(size)}</span>
 	</div>
 </div>
 

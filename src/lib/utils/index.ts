@@ -36,3 +36,28 @@ export function createBidssDomain(
 ): [number, number] {
 	return [nice(marketPrice, -grouping) - grouping * length, nice(marketPrice, -grouping)];
 }
+
+export function format(value: number) {
+	const exponent = Math.floor(Math.log10(value || 1));
+
+	if (exponent < 3) {
+		return value.toFixed(1);
+	}
+
+	let l = 'k';
+	let divideBy = 3;
+
+	if (exponent >= 6) {
+		l = 'm';
+		divideBy = 6;
+	}
+
+	if (exponent >= 9) {
+		l = 'g';
+		divideBy = 9;
+	}
+
+	const f = Math.floor(value * Math.pow(10, -(divideBy - 1))) * Math.pow(10, -1);
+
+	return `${f.toFixed(1)}${l}`;
+}
