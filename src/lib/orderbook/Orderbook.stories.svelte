@@ -19,7 +19,6 @@
 	import { scaleBand } from 'd3';
 	import { derived } from 'svelte/store';
 	import { Configuration, setConfigurationContext } from '$lib/configuration';
-	import '../../app.css';
 
 	setConfigurationContext();
 
@@ -30,13 +29,13 @@
 	let from = 'BTC'; // | 'ETH' | 'SOL'
 
 	let exchanges: Exchange[] = [
-		new CoinbaseExchange({ from: from, to: 'USD' }).focus(true)
-		// new BinanceExchange({ from: from.toLowerCase(), to: 'usdt' }),
-		// new BitfinexExchange({ from: from, to: 'UST' }),
-		// new BitmexExchange({ from: from, to: 'USD' }),
-		// new BybitExchange({ from: from, to: 'USDT' }),
-		// new BitgetExchange({ from: from, to: 'USDT' }),
-		// new KrakenExchange({ from: from, to: 'USD' })
+		new CoinbaseExchange({ from: from, to: 'USD' }).focus(true),
+		new BinanceExchange({ from: from.toLowerCase(), to: 'usdt' }),
+		new BitfinexExchange({ from: from, to: 'UST' }),
+		new BitmexExchange({ from: from, to: 'USD' }),
+		new BybitExchange({ from: from, to: 'USDT' }),
+		new BitgetExchange({ from: from, to: 'USDT' }),
+		new KrakenExchange({ from: from, to: 'USD' })
 	];
 
 	let clientWidth = 0;
@@ -204,7 +203,7 @@
 				</div>
 
 				<div class="flex items-center">
-					<span class="text-2xl text-white font-black upp">Ask Theme</span>
+					<span class="text-2xl text-white font-black upp">Ask</span>
 				</div>
 
 				<div class="flex flex-col">
@@ -236,7 +235,7 @@
 				</div>
 
 				<div class="flex items-center">
-					<span class="text-2xl text-white font-black">Bid Theme</span>
+					<span class="text-2xl text-white font-black">Bid</span>
 				</div>
 
 				<div class="flex flex-col">
@@ -268,7 +267,7 @@
 				</div>
 
 				<div class="flex items-center">
-					<span class="text-2xl text-white font-black upp">Boundaries Theme</span>
+					<span class="text-2xl text-white font-black upp">Boundaries</span>
 				</div>
 
 				<div class="flex gap-2">
@@ -289,7 +288,7 @@
 				</div>
 
 				<div class="flex items-center">
-					<span class="text-2xl text-white font-black upp">Market Price Ind Theme</span>
+					<span class="text-2xl text-white font-black upp">Market Price</span>
 				</div>
 
 				<div class="flex gap-2">
@@ -342,3 +341,26 @@
 		</div>
 	</div>
 </Story>
+
+<style lang="postcss">
+	.orderbook-name {
+		@apply p-2 text-lg;
+		color: white;
+		top: 0;
+	}
+
+	.orderbooks-names {
+		backdrop-filter: blur(6px);
+	}
+
+	.settings-bar {
+		height: 96px;
+	}
+
+	button.currency-switch {
+		@apply p-2 font-semibold border border-white text-white bg-white bg-opacity-0 hover:bg-opacity-10 active:bg-opacity-20;
+	}
+	button.currency-switch.selected {
+		@apply bg-white bg-opacity-100 text-gray-900 hover:bg-opacity-80 active:bg-opacity-70;
+	}
+</style>
