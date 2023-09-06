@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { CoinbaseExchange } from '$lib/orderbook/exchanges';
-	import type { Spread } from '$lib/orderbook/types';
+	import { CoinbaseExchange, type Spread } from '$lib';
 	import { OrderbookLite } from '$lib/orderbookLite';
 	import { onMount } from 'svelte';
 	import { readable } from 'svelte/store';

@@ -11,7 +11,7 @@
 		KrakenExchange,
 		Exchange,
 		getMaxGroupingValue
-	} from '$lib/orderbook/exchanges';
+	} from '$lib';
 	import { onMount, tick } from 'svelte';
 	import { colord } from 'colord';
 	import { getConfigurationContext } from '$lib/configuration';

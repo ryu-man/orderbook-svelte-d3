@@ -10,7 +10,7 @@
 		KrakenExchange,
 		Exchange,
 		getMaxGroupingValue
-	} from '$lib/orderbook/exchanges';
+	} from '$lib';
 	import { setConfigurationContext } from '$lib/configuration';
 	import OrderbookLite from './OrderbookLite.svelte';
 	import Feeder from './Feeder.svelte';
