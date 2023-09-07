@@ -60,7 +60,7 @@
 				{@const price = getPrice(grouping)(item)}
 				{@const exponent = Math.min(2, Math.log10(grouping || 1))}
 
-				<div class="flex-1 flex min-h-0" animate:flip={{ duration: 100 }}>
+				<div class="flex-1 flex min-h-0">
 					<SpreadItem
 						{total}
 						{size}
