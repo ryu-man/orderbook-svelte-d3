@@ -63,8 +63,12 @@ export abstract class Exchange<S = any, U = any> {
 	disconnect() {
 		this?.removeEventListeners.forEach((cb) => cb());
 		if (!this.isClosed()) {
-			this?.unsubscribe();
-			this.ws?.close();
+			try {
+				this?.unsubscribe();
+				this.ws?.close();
+			} catch (error) {
+				//
+			}
 		}
 		this.stat.asks0$.clear();
 		this.stat.bids0$.clear();
