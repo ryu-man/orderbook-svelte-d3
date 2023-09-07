@@ -12,7 +12,7 @@
 		getMaxGroupingValue
 	} from '$lib';
 	import { setConfigurationContext } from '$lib/configuration';
-	import OrderbookLite from './OrderbookLite.svelte';
+	import OrderbookLite from './Litebook.svelte';
 	import Feeder from './Feeder.svelte';
 	import Options from './Options.svelte';
 

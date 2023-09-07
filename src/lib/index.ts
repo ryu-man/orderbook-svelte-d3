@@ -1,5 +1,5 @@
 export { Orderbook } from './orderbook';
-export { OrderbookLite } from './orderbookLite';
+export { LiteBook } from './litebook';
 export * from './exchanges';
 export * from './utils';
 export * from './types'

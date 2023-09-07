@@ -11,7 +11,7 @@
 		Exchange,
 		getMaxGroupingValue
 	} from '$lib';
-	import OrderbookLite from './OrderbookLite.svelte';
+	import LiteBook from './Litebook.svelte';
 	import Feeder from './Feeder.svelte';
 	import Options from './Options.svelte';
 	import { onMount, tick } from 'svelte';
@@ -166,7 +166,7 @@
 	}
 </script>
 
-<Meta title="Litebook" component={OrderbookLite} />
+<Meta title="Litebook" component={LiteBook} />
 
 <Story id="multiplelitebook" name="Multiple" let:args>
 	<div
@@ -282,7 +282,7 @@
 
 						<div class="flex-1">
 							<Feeder {exchange} grouping={$grouping$} let:asks let:bids let:marketPrice>
-								<OrderbookLite
+								<LiteBook
 									{asks}
 									{bids}
 									{marketPrice}
