@@ -4,6 +4,7 @@
 	import { sizeOf, totalOf } from '$lib/utils';
 	import type { Bin, ScaleLinear } from 'd3';
 	import SpreadItem from './SpreadItem.svelte';
+	import { fade, slide } from 'svelte/transition';
 
 	export let data: Spread[] = [];
 	export let scale: ScaleLinear<number, number>;
@@ -43,10 +44,11 @@
 	}
 
 	function key(item: Spread | Bin<Spread[], number>) {
-		return item.x1 * item.x0 || item[0];
+		if (item.x0 && item.x1) {
+			return item.x0 + '-' + item.x1;
+		}
+		return item[0];
 	}
-
-	// $: console.log(data);
 </script>
 
 <div class="group {klass}" class:reverse>
