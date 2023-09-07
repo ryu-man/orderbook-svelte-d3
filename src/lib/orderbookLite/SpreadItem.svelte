@@ -26,8 +26,10 @@
 	>
 		<span>{price.toFixed(Math.max(2, fractionDigits))}</span>
 	</div>
-	<div class="absolute top-0 bottom-0 right-2 flex items-center gap-4 text-white">
-		<span class="absolute right-0" style:transform="translateX(0) translateX(-25vw)">{format(total)}</span>
+	<div
+		class="absolute top-0 bottom-0 right-2 flex items-center gap-4 text-white pointer-events-none w-full"
+	>
+		<span class="absolute" style:right="25%">{format(total)}</span>
 		<span class="absolute right-0">{format(size)}</span>
 	</div>
 </div>

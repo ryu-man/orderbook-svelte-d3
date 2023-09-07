@@ -23,9 +23,9 @@
 	let grouping = 0;
 </script>
 
-<Meta title="Orderbook Lite" component={OrderbookLite} />
+<Meta title="Litebook" component={OrderbookLite} />
 
-<Story id="orderbooklite" name="OrderbookLite" let:args>
+<Story id="litebook" name="Litebook" let:args>
 	<div class="flex flex-col w-full h-full">
 		<Options bind:grouping />
 

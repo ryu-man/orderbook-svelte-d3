@@ -43,14 +43,16 @@
 	}
 
 	function key(item: Spread | Bin<Spread[], number>) {
-		return;
+		return item.x1 * item.x0 || item[0];
 	}
+
+	// $: console.log(data);
 </script>
 
 <div class="group {klass}" class:reverse>
 	<div class="">
 		<div class="flex flex-col w-full h-full" style:gap={1 * window.devicePixelRatio + 'px'}>
-			{#each data as item, i (item.x1 || item[0])}
+			{#each data as item, i (key(item))}
 				{@const total = getTotalOf(grouping)(data.slice(0, i))}
 				{@const size = getSizeOf(grouping)(item)}
 				{@const price = getPrice(grouping)(item)}
