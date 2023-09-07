@@ -114,9 +114,9 @@
 
 	onMount(() =>
 		aggregationValues$.subscribe((d) => {
-			// console.log(d);
 			if (d.length && $grouping$ === 0) {
-				grouping$.set(d[0] / 100);
+				const max = Math.max(...d);
+				grouping$.set(max / 100);
 			}
 		})
 	);
@@ -267,53 +267,11 @@
 						/>
 					</div>
 				</div>
-
-				<div class="flex items-center">
-					<span class="text-2xl text-white font-black upp">Boundaries</span>
-				</div>
-
-				<div class="flex gap-2">
-					<div class="flex flex-col">
-						<div class="text-white mb-2">Text</div>
-						<ColorPickr
-							value={colord($theme$.boundaries.text).toHex()}
-							on:change={(e) => ($theme$.boundaries.text = e.detail)}
-						/>
-					</div>
-					<div class="flex flex-col">
-						<div class="text-white mb-2">Line</div>
-						<ColorPickr
-							value={colord($theme$.boundaries.line).toHex()}
-							on:change={(e) => ($theme$.boundaries.line = e.detail)}
-						/>
-					</div>
-				</div>
-
-				<div class="flex items-center">
-					<span class="text-2xl text-white font-black upp">Market Price</span>
-				</div>
-
-				<div class="flex gap-2">
-					<div class="flex flex-col">
-						<div class="text-white mb-2">Text</div>
-						<ColorPickr
-							value={colord($theme$.marketPrice.text).toHex()}
-							on:change={(e) => ($theme$.marketPrice.text = e.detail)}
-						/>
-					</div>
-					<div class="flex flex-col">
-						<div class="text-white mb-2">Line</div>
-						<ColorPickr
-							value={colord($theme$.marketPrice.line).toHex()}
-							on:change={(e) => ($theme$.marketPrice.line = e.detail)}
-						/>
-					</div>
-				</div>
 			</div>
 		</div>
 
 		<div class="flex-1 overflow-hidden relative" bind:clientWidth>
-			{#each exchanges as exchange}
+			{#each exchanges as exchange (exchange.fullname)}
 				<div
 					class="absolute top-0 left-0 h-full"
 					style:transform="translate({productScale(exchange.fullname)}px, 0px)"
