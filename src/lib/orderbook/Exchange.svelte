@@ -3,8 +3,8 @@
 	import { documentVisibilityStore } from 'svelte-legos';
 	import Orderbook from './Orderbook.svelte';
 	import { onMount } from 'svelte';
-	import type { Exchange } from './exchanges/exchange';
-	import type { Spread } from './types';
+	import type { Exchange } from '../exchanges';
+	import type { Spread } from '../types';
 	import { getConfigurationContext } from '../configuration';
 	import { ceil, floor, expOf } from '$lib/utils';
 
