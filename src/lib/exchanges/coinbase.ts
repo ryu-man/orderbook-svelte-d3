@@ -63,8 +63,17 @@ export class CoinbaseExchange extends Exchange<Snapshot, Update> {
 		const ask = this.stat.asks0$.value[0];
 		const bid = this.stat.bids0$.value[0];
 
-		this.stat.asks0$.set(parsed.asks.filter((d) => d[0] > bid[0]));
-		this.stat.bids0$.set(parsed.bids.filter((d) => d[0] < ask[0]));
+		if (bid?.[0]) {
+			this.stat.asks0$.set(parsed.asks.filter((d) => d[0] > bid[0]));
+		} else {
+			this.stat.asks0$.set(parsed.asks);
+		}
+
+		if (ask?.[0]) {
+			this.stat.bids0$.set(parsed.bids.filter((d) => d[0] < ask[0]));
+		} else {
+			this.stat.bids0$.set(parsed.bids);
+		}
 	}
 
 	subscribe(): void {

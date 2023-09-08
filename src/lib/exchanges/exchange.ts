@@ -1,8 +1,7 @@
-import { readonly, type Writable } from 'svelte/store';
+import { readonly } from 'svelte/store';
 import type { Spread } from '../types';
 import { marketPrice, syncAll, within } from './utils';
 import { derived, writable } from './store';
-import { ceil, floor } from '$lib/utils';
 import { sort } from 'd3';
 
 export abstract class Exchange<S = any, U = any> {

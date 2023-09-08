@@ -52,13 +52,13 @@ export class BitfinexExchange extends Exchange<Snapshot, Update> {
 			const ask = exchange.stat.asks0$.value[0];
 			const bid = exchange.stat.bids0$.value[0];
 
-			if (bid[0]) {
+			if (bid?.[0]) {
 				exchange.stat.asks0$.set(parsed.asks.filter((d) => d[0] > bid[0]));
 			} else {
 				exchange.stat.asks0$.set(parsed.asks);
 			}
 
-			if (ask[0]) {
+			if (ask?.[0]) {
 				exchange.stat.bids0$.set(parsed.bids.filter((d) => d[0] < ask[0]));
 			} else {
 				exchange.stat.bids0$.set(parsed.bids);
