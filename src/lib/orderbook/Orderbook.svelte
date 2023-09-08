@@ -59,8 +59,6 @@
 		}
 	};
 
-	$: console.log(theme);
-
 	export let grouping = 10;
 
 	export let focus = false;

@@ -8,8 +8,6 @@
 	export let fontSize = '10pt';
 	export let color = 'rgb( 255 255 255 / 1)';
 
-	$: console.log(color);
-
 	const y$ = tweened(y, { duration: 300, easing: cubicOut });
 	$: y$.set(y);
 </script>
