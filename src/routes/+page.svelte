@@ -36,52 +36,25 @@
 
 	let clientWidth = 0;
 
-	const maxDomain$ = derived(
-		exchanges.map((d) => d.domain$),
-		(domains) => {
-			if (domains.some((d) => d[1] === 0)) {
-				return 0;
-			}
-
-			const first = domains[0];
-			return domains.reduce((acc, val) => Math.max(acc, val[0]), first[0]);
+	const marketPrice$ = derived(
+		exchanges.map((exchange) => exchange.marketPrice$),
+		(prices) => {
+			return Math.max(...prices);
 		},
 		0
-	);
-	const minDomain$ = derived(
-		exchanges.map((d) => d.domain$),
-		(domains) => {
-			if (domains.some((d) => d[1] === 0)) {
-				return 0;
-			}
-
-			const first = domains[0];
-			return domains.reduce((acc, val) => Math.min(acc, val[1]), first[1]);
-		},
-		0
-	);
-	const domain = derived(
-		[maxDomain$, minDomain$],
-		([max, min]) => {
-			return [max, min];
-		},
-		[0, 0]
 	);
 
 	const aggregationValues$ = derived(
-		domain,
-		([max, min]) => {
-			if (max === 0 || min === 0) {
+		marketPrice$,
+		(price) => {
+			if (price) {
 				return [];
 			}
 
 			const values: number[] = [];
-			if (max === 0) {
-				return values;
-			}
 
 			// console.log(max)
-			const maxGroupingValue = getMaxGroupingValue(max);
+			const maxGroupingValue = getMaxGroupingValue(price);
 
 			let start = maxGroupingValue;
 			let level = 10;
@@ -181,7 +154,7 @@
 					{/each}
 				</div>
 			</div>
-			
+
 			<div class="flex flex-col">
 				<div class="text-white mb-2">Aggregating Grouping</div>
 				<select
