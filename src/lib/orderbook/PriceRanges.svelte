@@ -11,6 +11,8 @@
 
 	export let primaryColor = 'rgb( 255 255 255 / 1)';
 	export let secondaryColor = 'rgb( 255 255 255 / 0.5)';
+
+	$: console.log(grouping);
 </script>
 
 <Group y={-step / 2}>

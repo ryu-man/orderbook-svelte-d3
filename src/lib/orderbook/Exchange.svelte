@@ -126,5 +126,6 @@
 	bids$={_bids$}
 	thresholds$={_thresholds$}
 	marketPrice$={_marketPrice$}
+	grouping={$grouping$}
 	theme={$theme$}
 />
