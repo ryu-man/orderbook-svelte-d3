@@ -51,7 +51,7 @@
 	const aggregationValues$ = derived(
 		marketPrice$,
 		(price) => {
-			if (price) {
+			if (price === 0) {
 				return [];
 			}
 
