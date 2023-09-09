@@ -132,7 +132,7 @@
 				exchange.connect();
 			} else {
 				// turn off
-				exchange.disconnect();
+				exchange.status('off').disconnect();
 			}
 		};
 	}
