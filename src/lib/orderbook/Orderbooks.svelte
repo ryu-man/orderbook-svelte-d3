@@ -4,7 +4,7 @@
 	import { Canvas, Group, Clip } from '../canvas';
 	import ExchangeComponent from './Exchange.svelte';
 	import { setOrderbookContext } from './context';
-	import type { Exchange } from './exchanges/exchange';
+	import type { Exchange } from '../exchanges';
 	import ViewportClipper from './ViewportClipper.svelte';
 
 	export let padding = {
@@ -19,13 +19,15 @@
 
 	export let exchanges: Exchange[];
 
+	export let length = 200;
+
 	const { padding$ } = setOrderbookContext();
 	$: padding$.set(padding);
 
 	let clientWidth = 0;
 	let clientHeight = 0;
 
-	$: maxHeight = Math.max(clientHeight, 24 * 300);
+	$: maxHeight = Math.max(clientHeight, 36 * length);
 
 	$: innerWidth = clientWidth - padding.left - padding.right;
 	$: innerHeight = maxHeight - padding.top - padding.bottom;

@@ -9,7 +9,7 @@
 	import { ceil, floor, expOf } from '$lib/utils';
 
 	const visibility$ = documentVisibilityStore();
-	const { grouping$, theme$ } = getConfigurationContext();
+	const { grouping$, theme$, length$ } = getConfigurationContext();
 
 	export let exchange: Exchange;
 
@@ -17,7 +17,6 @@
 	export let height = 0;
 	export let x = 0;
 	export let y = 0;
-	export let grouping = 10;
 
 	let asks: Spread[] = [];
 	let bids: Spread[] = [];
@@ -109,6 +108,7 @@
 	});
 
 	$: exchange.grouping$.set($grouping$);
+	$: exchange.length$.set($length$)
 	$: thresholds = $thresholds$;
 	$: asks = $asks$;
 	$: bids = $bids$;

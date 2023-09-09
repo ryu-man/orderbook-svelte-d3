@@ -22,7 +22,7 @@
 
 	setConfigurationContext();
 
-	const { grouping$, theme$ } = getConfigurationContext();
+	const { grouping$, theme$, length$ } = getConfigurationContext();
 
 	const currencies = ['BTC', 'ETH', 'XRP'];
 
@@ -176,6 +176,21 @@
 					</select>
 				</div>
 
+				<div class="flex flex-col">
+					<div class="text-white mb-2">Length</div>
+					<input
+						class="pl-2"
+						type="number"
+						min={10}
+						max={200}
+						value={$length$}
+						on:blur={(e) => {
+							const value = e.currentTarget.valueAsNumber;
+							length$.set(Math.max(10, Math.min(value, 200)));
+						}}
+					/>
+				</div>
+
 				<div class="flex items-center">
 					<span class="text-2xl text-white font-black upp">Ask</span>
 				</div>
@@ -311,7 +326,7 @@
 					</div>
 				</div>
 			</div>
-			<Orderbooks {exchanges} />
+			<Orderbooks {exchanges} length={$length$} />
 		</div>
 	</div>
 </Story>

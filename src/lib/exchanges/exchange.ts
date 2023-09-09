@@ -22,7 +22,7 @@ export abstract class Exchange<S = any, U = any> {
 
 	public marketPrice$ = this.stat.marketPrice$;
 	// public thresholds$ = this.stat.thresholds$;
-	// public length$ = this.stat.length$;
+	public length$ = this.stat.length$;
 	public grouping$ = this.stat.grouping$;
 
 	removeEventListeners: (() => void)[] = [];
@@ -150,6 +150,7 @@ export function queu() {
 	const bids0$ = bid_spreads();
 
 	const limits$ = writable<[number, number]>([30000, 0.00001]);
+	const length$ = writable<number>(200);
 	const grouping$ = writable(0);
 
 	const ask0$ = derived(asks0$, (asks) => asks[0] || [0, 0]);
@@ -161,13 +162,12 @@ export function queu() {
 	const marketPrice$ = derived([ask0Price$, bid0Price$], ([ask, bid]) => marketPrice(ask, bid), 0);
 
 	const domain$ = derived(
-		[ask0Price$, bid0Price$, grouping$],
-		([ask, bid, grouping]) => {
+		[ask0Price$, bid0Price$, grouping$, length$],
+		([ask, bid, grouping, length]) => {
 			if (ask === 0 || bid === 0) {
 				return [0, 0];
 			}
 
-			const length = 200;
 			const by = length * grouping;
 			return [Math.min(30000, boundary(ask, by)), Math.max(0.00001, boundary(bid, -by))];
 		},
@@ -191,6 +191,7 @@ export function queu() {
 		marketPrice$,
 		domain$,
 		limits$,
+		length$,
 		grouping$,
 		ready$
 	};

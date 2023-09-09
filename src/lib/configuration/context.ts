@@ -7,6 +7,7 @@ const CONTEXT_KEY = 'orderbook_context_key';
 export type ConfigurationContext = {
 	marketDomain$: Writable<[number, number]>;
 	grouping$: Writable<number>;
+	length$: Writable<number>;
 	groupingValues$: Writable<number[]>;
 	theme$: Writable<OrderbookTheme>;
 };
@@ -50,6 +51,7 @@ export function setConfigurationContext(): ConfigurationContext {
 	return setContext(CONTEXT_KEY, {
 		marketDomain$: writable([0, 0]),
 		grouping$: writable(0),
+		length$: writable(200),
 		groupingValues$: writable([]),
 		theme$: writable(defaultTheme)
 	});
