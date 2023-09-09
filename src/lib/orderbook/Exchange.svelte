@@ -108,7 +108,7 @@
 	});
 
 	$: exchange.grouping$.set($grouping$);
-	$: exchange.length$.set($length$)
+	$: exchange.length$.set($length$);
 	$: thresholds = $thresholds$;
 	$: asks = $asks$;
 	$: bids = $bids$;
