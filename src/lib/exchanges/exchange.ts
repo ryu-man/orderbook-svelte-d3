@@ -6,7 +6,7 @@ import { sort } from 'd3';
 
 export abstract class Exchange<S = any, U = any> {
 	protected ws: WebSocket;
-	protected stat = queu();
+	protected stat = lab();
 
 	#name: string;
 	#from: string;
@@ -145,7 +145,7 @@ export abstract class Exchange<S = any, U = any> {
 	abstract unsubscribe(): void;
 }
 
-export function queu() {
+export function lab() {
 	const asks0$ = ask_spreads();
 	const bids0$ = bid_spreads();
 
