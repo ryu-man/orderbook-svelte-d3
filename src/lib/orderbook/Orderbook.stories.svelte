@@ -186,7 +186,10 @@
 						value={$length$}
 						on:blur={(e) => {
 							const value = e.currentTarget.valueAsNumber;
-							length$.set(Math.max(10, Math.min(value, 200)));
+							const n = Math.max(10, Math.min(value, 200));
+
+							length$.set(n);
+							e.currentTarget.value = n + '';
 						}}
 					/>
 				</div>
