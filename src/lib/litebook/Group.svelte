@@ -4,6 +4,7 @@
 	import { sizeOf, totalOf } from '$lib/utils';
 	import type { Bin, ScaleLinear } from 'd3';
 	import SpreadItem from './SpreadItem.svelte';
+	import { fade, slide } from 'svelte/transition';
 
 	export let data: Spread[] = [];
 	export let scale: ScaleLinear<number, number>;
@@ -43,20 +44,23 @@
 	}
 
 	function key(item: Spread | Bin<Spread[], number>) {
-		return;
+		if (item.x0 && item.x1) {
+			return item.x0 + '-' + item.x1;
+		}
+		return item[0];
 	}
 </script>
 
 <div class="group {klass}" class:reverse>
 	<div class="">
 		<div class="flex flex-col w-full h-full" style:gap={1 * window.devicePixelRatio + 'px'}>
-			{#each data as item, i (item.x1 || item[0])}
+			{#each data as item, i (key(item))}
 				{@const total = getTotalOf(grouping)(data.slice(0, i))}
 				{@const size = getSizeOf(grouping)(item)}
 				{@const price = getPrice(grouping)(item)}
 				{@const exponent = Math.min(2, Math.log10(grouping || 1))}
 
-				<div class="flex-1 flex min-h-0" animate:flip={{ duration: 100 }}>
+				<div class="flex-1 flex min-h-0" animate:flip={{duration: 100}}>
 					<SpreadItem
 						{total}
 						{size}

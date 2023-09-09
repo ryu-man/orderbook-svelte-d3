@@ -10,9 +10,9 @@
 		KrakenExchange,
 		Exchange,
 		getMaxGroupingValue
-	} from '$lib/orderbook/exchanges';
+	} from '$lib';
 	import { setConfigurationContext } from '$lib/configuration';
-	import OrderbookLite from './OrderbookLite.svelte';
+	import OrderbookLite from './Litebook.svelte';
 	import Feeder from './Feeder.svelte';
 	import Options from './Options.svelte';
 
@@ -23,9 +23,9 @@
 	let grouping = 0;
 </script>
 
-<Meta title="Orderbook Lite" component={OrderbookLite} />
+<Meta title="Litebook" component={OrderbookLite} />
 
-<Story id="orderbooklite" name="OrderbookLite" let:args>
+<Story id="litebook" name="Litebook" let:args>
 	<div class="flex flex-col w-full h-full">
 		<Options bind:grouping />
 

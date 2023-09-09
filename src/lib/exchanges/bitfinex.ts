@@ -27,7 +27,7 @@ export class BitfinexExchange extends Exchange<Snapshot, Update> {
 		}
 		if (Array.isArray(raw)) {
 			const parsed = parse(raw);
-			
+
 			if (exchange.#index) {
 				const limitsDomain = exchange.stat.limits$.value || [30000, 0.00001];
 
@@ -52,8 +52,17 @@ export class BitfinexExchange extends Exchange<Snapshot, Update> {
 			const ask = exchange.stat.asks0$.value[0];
 			const bid = exchange.stat.bids0$.value[0];
 
-			exchange.stat.asks0$.set(parsed.asks.filter((d) => d[0] > bid[0]));
-			exchange.stat.bids0$.set(parsed.bids.filter((d) => d[0] < ask[0]));
+			if (bid?.[0]) {
+				exchange.stat.asks0$.set(parsed.asks.filter((d) => d[0] > bid[0]));
+			} else {
+				exchange.stat.asks0$.set(parsed.asks);
+			}
+
+			if (ask?.[0]) {
+				exchange.stat.bids0$.set(parsed.bids.filter((d) => d[0] < ask[0]));
+			} else {
+				exchange.stat.bids0$.set(parsed.bids);
+			}
 		}
 	}
 

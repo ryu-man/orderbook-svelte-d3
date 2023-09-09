@@ -60,7 +60,6 @@ export function writable<T>(
 
 	return {
 		subscribe: dr(store, (v) => {
-			val = v;
 			return v;
 		}).subscribe,
 		set: (value: T): void => {
@@ -68,12 +67,8 @@ export function writable<T>(
 			store.set(value);
 		},
 		update: (updater: Updater<T>) => {
-			store.update((val) => {
-				const nval = updater(val);
-				val = nval;
-
-				return nval;
-			});
+			val = updater(val);
+			store.update(updater);
 		},
 		get value() {
 			return val;

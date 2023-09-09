@@ -123,7 +123,7 @@
 
 <style lang="postcss">
 	.orderbook-lite-container {
-		@apply w-full h-full border flex-1;
+		@apply w-full h-full border-l flex-1;
 	}
 
 	.group {

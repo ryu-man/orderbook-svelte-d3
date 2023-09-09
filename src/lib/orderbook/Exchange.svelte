@@ -3,13 +3,13 @@
 	import { documentVisibilityStore } from 'svelte-legos';
 	import Orderbook from './Orderbook.svelte';
 	import { onMount } from 'svelte';
-	import type { Exchange } from './exchanges/exchange';
-	import type { Spread } from './types';
+	import type { Exchange } from '../exchanges';
+	import type { Spread } from '../types';
 	import { getConfigurationContext } from '../configuration';
 	import { ceil, floor, expOf } from '$lib/utils';
 
 	const visibility$ = documentVisibilityStore();
-	const { grouping$, theme$ } = getConfigurationContext();
+	const { grouping$, theme$, length$ } = getConfigurationContext();
 
 	export let exchange: Exchange;
 
@@ -17,7 +17,6 @@
 	export let height = 0;
 	export let x = 0;
 	export let y = 0;
-	export let grouping = 10;
 
 	let asks: Spread[] = [];
 	let bids: Spread[] = [];
@@ -109,6 +108,7 @@
 	});
 
 	$: exchange.grouping$.set($grouping$);
+	$: exchange.length$.set($length$);
 	$: thresholds = $thresholds$;
 	$: asks = $asks$;
 	$: bids = $bids$;
@@ -126,5 +126,6 @@
 	bids$={_bids$}
 	thresholds$={_thresholds$}
 	marketPrice$={_marketPrice$}
+	grouping={$grouping$}
 	theme={$theme$}
 />

@@ -1,7 +1,6 @@
 <script lang="ts">
-	import { CoinbaseExchange } from '$lib/orderbook/exchanges';
-	import type { Spread } from '$lib/orderbook/types';
-	import { OrderbookLite } from '$lib/orderbookLite';
+	import { CoinbaseExchange, type Spread } from '$lib';
+	import { LiteBook } from '$lib/litebook';
 	import { onMount } from 'svelte';
 	import { readable } from 'svelte/store';
 
@@ -64,7 +63,7 @@
 </script>
 
 <div class="page w-full h-full">
-	<OrderbookLite
+	<LiteBook
 		width="20vw"
 		asks={$delayedAsks$}
 		bids={$delayedBids$}

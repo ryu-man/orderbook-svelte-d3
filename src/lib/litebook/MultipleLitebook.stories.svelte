@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { Meta, Story } from '@storybook/addon-svelte-csf';
-	import Orderbooks from '$lib/orderbook/Orderbooks.svelte';
 	import {
 		CoinbaseExchange,
 		BinanceExchange,
@@ -12,6 +11,9 @@
 		Exchange,
 		getMaxGroupingValue
 	} from '$lib';
+	import LiteBook from './Litebook.svelte';
+	import Feeder from './Feeder.svelte';
+	import Options from './Options.svelte';
 	import { onMount, tick } from 'svelte';
 	import { colord } from 'colord';
 	import { getConfigurationContext } from '$lib/configuration';
@@ -20,9 +22,7 @@
 	import { derived } from 'svelte/store';
 	import { Configuration, setConfigurationContext } from '$lib/configuration';
 
-	setConfigurationContext();
-
-	const { grouping$, theme$, length$ } = getConfigurationContext();
+	const { grouping$, theme$ } = setConfigurationContext();
 
 	const currencies = ['BTC', 'ETH', 'XRP'];
 
@@ -38,6 +38,7 @@
 		new KrakenExchange({ from: from, to: 'USD' })
 	];
 
+	let grouping = 0;
 	let clientWidth = 0;
 
 	const marketPrice$ = derived(
@@ -86,9 +87,9 @@
 
 	onMount(() =>
 		aggregationValues$.subscribe((d) => {
-			// console.log(d);
 			if (d.length && $grouping$ === 0) {
-				grouping$.set(d[0] / 100);
+				const max = Math.max(...d);
+				grouping$.set(max / 100);
 			}
 		})
 	);
@@ -97,7 +98,7 @@
 	$: productScale = scaleBand()
 		.domain(productIds)
 		.range([0, clientWidth])
-		.paddingInner(0.4)
+		.paddingInner(0.1)
 		.paddingOuter(0.3);
 
 	$: step = productScale.step();
@@ -132,22 +133,22 @@
 				exchange.connect();
 			} else {
 				// turn off
-				exchange.status('off').disconnect();
+				exchange.disconnect();
 			}
 		};
 	}
 </script>
 
-<Meta title="Orderbook" component={Orderbooks} />
+<Meta title="Litebook" component={LiteBook} />
 
-<Story id="orderbook" name="Orderbook" let:args>
+<Story id="multiplelitebook" name="Multiple" let:args>
 	<div
 		class="w-full h-full overflow-hidden flex flex-col relative"
 		style="background-color: rgb(0 0 0)"
 		bind:clientWidth
 	>
 		<div
-			class="settings-bar absolute top-0 left-0 z-10 w-full border-b border-white border-opacity-20"
+			class="settings-bar top-0 left-0 z-10 w-full border-b border-white border-opacity-20"
 			style="backdrop-filter: blur(6px);"
 		>
 			<div class="w-full p-4 box-border flex justify-between gap-6">
@@ -174,24 +175,6 @@
 							<option value={val + ''}>{val}</option>
 						{/each}
 					</select>
-				</div>
-
-				<div class="flex flex-col">
-					<div class="text-white mb-2">Length</div>
-					<input
-						class="pl-2"
-						type="number"
-						min={10}
-						max={200}
-						value={$length$}
-						on:blur={(e) => {
-							const value = e.currentTarget.valueAsNumber;
-							const n = Math.max(10, Math.min(value, 200));
-
-							length$.set(n);
-							e.currentTarget.value = n + '';
-						}}
-					/>
 				</div>
 
 				<div class="flex items-center">
@@ -257,79 +240,61 @@
 						/>
 					</div>
 				</div>
-
-				<div class="flex items-center">
-					<span class="text-2xl text-white font-black upp">Boundaries</span>
-				</div>
-
-				<div class="flex gap-2">
-					<div class="flex flex-col">
-						<div class="text-white mb-2">Text</div>
-						<ColorPickr
-							value={colord($theme$.boundaries.text).toHex()}
-							on:change={(e) => ($theme$.boundaries.text = e.detail)}
-						/>
-					</div>
-					<div class="flex flex-col">
-						<div class="text-white mb-2">Line</div>
-						<ColorPickr
-							value={colord($theme$.boundaries.line).toHex()}
-							on:change={(e) => ($theme$.boundaries.line = e.detail)}
-						/>
-					</div>
-				</div>
-
-				<div class="flex items-center">
-					<span class="text-2xl text-white font-black upp">Market Price</span>
-				</div>
-
-				<div class="flex gap-2">
-					<div class="flex flex-col">
-						<div class="text-white mb-2">Text</div>
-						<ColorPickr
-							value={colord($theme$.marketPrice.text).toHex()}
-							on:change={(e) => ($theme$.marketPrice.text = e.detail)}
-						/>
-					</div>
-					<div class="flex flex-col">
-						<div class="text-white mb-2">Line</div>
-						<ColorPickr
-							value={colord($theme$.marketPrice.line).toHex()}
-							on:change={(e) => ($theme$.marketPrice.line = e.detail)}
-						/>
-					</div>
-				</div>
 			</div>
 		</div>
 
-		<div class="flex-1 overflow-hidden relative">
-			<div class="absolute inset-0 pointer-events-none z-10">
+		<div class="flex-1 overflow-hidden relative" bind:clientWidth>
+			{#each exchanges as exchange (exchange.fullname)}
 				<div
-					class="orderbooks-names inner absolute w-full h-12 border-t border-white border-opacity-20"
-					style="bottom:0px"
-					style:padding="0 {paddingOuter}px"
+					class="absolute top-0 left-0 h-full"
+					style:transform="translate({productScale(exchange.fullname)}px, 0px)"
+					style:width="{productScale.bandwidth()}px"
 				>
-					<div class="w-full h-full relative">
-						{#each exchanges as exchange, i}
-							<div
-								class="orderbook-name absolute flex justify-start items-center gap-2"
-								style:left="0px"
-								style:transform="translateX({step * i}px)"
-								style:width="{step}px"
-							>
-								<input
-									class="pointer-events-auto"
-									type="checkbox"
-									checked={true}
-									on:change={onChangeStatusHandler(exchange)}
+					<div class="relative flex flex-col w-full h-full">
+						<!-- <Options bind:grouping /> -->
+
+						<div class="flex-1">
+							<Feeder {exchange} grouping={$grouping$} let:asks let:bids let:marketPrice>
+								<LiteBook
+									{asks}
+									{bids}
+									{marketPrice}
+									from={exchange.from()}
+									to={exchange.to()}
+									grouping={$grouping$}
 								/>
-								<span>{exchange.fullname}</span>
-							</div>
-						{/each}
+							</Feeder>
+						</div>
 					</div>
 				</div>
+			{/each}
+		</div>
+
+		<div class="inset-0 pointer-events-none z-10 h-12">
+			<div
+				class="orderbooks-names inner absolute w-full h-12 border-t border-white border-opacity-20"
+				style="bottom:0px"
+				style:padding="0 {paddingOuter}px"
+			>
+				<div class="w-full h-full relative">
+					{#each exchanges as exchange, i}
+						<div
+							class="orderbook-name absolute flex justify-start items-center gap-2"
+							style:left="0px"
+							style:transform="translateX({step * i}px)"
+							style:width="{step}px"
+						>
+							<input
+								class="pointer-events-auto"
+								type="checkbox"
+								checked={true}
+								on:change={onChangeStatusHandler(exchange)}
+							/>
+							<span>{exchange.fullname}</span>
+						</div>
+					{/each}
+				</div>
 			</div>
-			<Orderbooks {exchanges} length={$length$} />
 		</div>
 	</div>
 </Story>
