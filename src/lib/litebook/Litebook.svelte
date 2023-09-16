@@ -48,9 +48,9 @@
 	);
 
 	// $: getTotal = getTotalOfFunc(grouping, type);
-	$: asksDomain = getDomain(_asks, type);
-	$: bidsDomain = getDomain(_bids, type);
-	$: console.log(type);
+
+	$: asksDomain = getDomain(_asks, type, grouping);
+	$: bidsDomain = getDomain(_bids, type, grouping);
 
 	$: totalAsksScale = scaleLinear(asksDomain, [0, 100]);
 	$: totalBidsScale = scaleLinear(bidsDomain, [0, 100]);
@@ -87,27 +87,22 @@
 		};
 	}
 
-	function getTotalOfFunc(grouping = 0, type: 'staircase' | 'ungrouped') {
-		if (grouping === 0 || type === 'ungrouped') {
-			return sizeOf;
-		}
-
-		return totalOf;
-	}
-
 	function getDomain(
 		data: Spread[] | Bin<[number, number], number>[],
-		type: 'staircase' | 'ungrouped'
+		type: 'staircase' | 'ungrouped',
+		grouping: number
 	) {
+		const trimedData = data.slice(0, -1);
 		if (type === 'ungrouped') {
-			const mx = max(data.slice(0, -1), (d) => sizeOf(d));
+			if (grouping === 0) {
+				return [0, sizeOf(trimedData)];
+			}
+			const mx = max(trimedData, (d) => sizeOf(d));
 			return [0, mx];
 		}
 
-		return [0, totalOf(data.slice(0, -1))];
+		return [0, totalOf(trimedData)];
 	}
-	function staircase() {}
-	function ungrouped() {}
 </script>
 
 <div class="orderbook-lite-container" style:width style:height>
