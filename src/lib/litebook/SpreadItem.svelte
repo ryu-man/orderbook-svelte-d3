@@ -38,6 +38,7 @@
 	.spread-item {
 		flex: 1;
 		min-height: 0;
+		cursor: pointer;
 	}
 
 	.spread-item:hover {

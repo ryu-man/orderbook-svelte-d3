@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { bin, scaleLinear, sort, type HistogramGeneratorNumber } from 'd3';
+	import { bin, scaleLinear, sort, type HistogramGeneratorNumber, max, type Bin } from 'd3';
 	import { colord } from 'colord';
 	import type { Spread } from '$lib/types';
 	import { sizeOf, totalOf } from '$lib/utils';
@@ -18,6 +18,8 @@
 	export let marketPrice = 0;
 
 	export let grouping = 0;
+	export let length = 20;
+	export let type: 'staircase' | 'ungrouped' = 'staircase';
 
 	export let from = '';
 	export let to = '';
@@ -28,8 +30,8 @@
 	const asksBinGen = bin<[number, number], number>().value(priceAccessor);
 	const bidsBinGen = bin<[number, number], number>().value(priceAccessor);
 
-	$: asksdomain = createAsksDomain(marketPrice, grouping, 20);
-	$: bidsdomain = createBidssDomain(marketPrice, grouping, 20);
+	$: asksdomain = createAsksDomain(marketPrice, grouping, length);
+	$: bidsdomain = createBidssDomain(marketPrice, grouping, length);
 
 	// [nice(marketPrice, -grouping) - grouping * 20, nice(marketPrice, -grouping)] as [
 	// 	number,
@@ -45,10 +47,13 @@
 		(a, b) => (b.x0 || b[0]) - (a.x0 || a[0])
 	);
 
-	$: getTotal = getTotalOfFunc(grouping);
+	// $: getTotal = getTotalOfFunc(grouping, type);
+	$: asksDomain = getDomain(_asks, type);
+	$: bidsDomain = getDomain(_bids, type);
+	$: console.log(type);
 
-	$: totalAsksScale = scaleLinear([0, getTotal(_asks.slice(0, -1))], [0, 100]);
-	$: totalBidsScale = scaleLinear([0, getTotal(_bids.slice(0, -1))], [0, 100]);
+	$: totalAsksScale = scaleLinear(asksDomain, [0, 100]);
+	$: totalBidsScale = scaleLinear(bidsDomain, [0, 100]);
 
 	/******************************************************************************************/
 
@@ -74,21 +79,35 @@
 
 	function bins(data: Spread[], grouping = 0) {
 		if (grouping === 0) {
-			return () => data.slice(0, 20);
+			return () => data.slice(0, length);
 		}
 
 		return (histogram: HistogramGeneratorNumber<[number, number], number>) => {
-			return histogram(data).slice(0, 20);
+			return histogram(data).slice(0, length);
 		};
 	}
 
-	function getTotalOfFunc(grouping = 0) {
-		if (grouping === 0) {
+	function getTotalOfFunc(grouping = 0, type: 'staircase' | 'ungrouped') {
+		if (grouping === 0 || type === 'ungrouped') {
 			return sizeOf;
 		}
 
 		return totalOf;
 	}
+
+	function getDomain(
+		data: Spread[] | Bin<[number, number], number>[],
+		type: 'staircase' | 'ungrouped'
+	) {
+		if (type === 'ungrouped') {
+			const mx = max(data.slice(0, -1), (d) => sizeOf(d));
+			return [0, mx];
+		}
+
+		return [0, totalOf(data.slice(0, -1))];
+	}
+	function staircase() {}
+	function ungrouped() {}
 </script>
 
 <div class="orderbook-lite-container" style:width style:height>
@@ -101,6 +120,7 @@
 				backgroundColor={askBackgroundColor}
 				textColor={askTextColor}
 				{grouping}
+				{type}
 				reverse
 			/>
 
@@ -116,6 +136,7 @@
 				backgroundColor={bidBackgroundColor}
 				textColor={bidTextColor}
 				{grouping}
+				{type}
 			/>
 		{/if}
 	</div>

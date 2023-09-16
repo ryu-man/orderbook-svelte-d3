@@ -22,7 +22,8 @@
 	import { derived } from 'svelte/store';
 	import { Configuration, setConfigurationContext } from '$lib/configuration';
 
-	const { grouping$, theme$ } = setConfigurationContext();
+	const { grouping$, length$, theme$ } = setConfigurationContext();
+	length$.set(20);
 
 	const currencies = ['BTC', 'ETH', 'XRP'];
 
@@ -40,6 +41,7 @@
 
 	let grouping = 0;
 	let clientWidth = 0;
+	let type: 'staircase' | 'ungrouped' = 'staircase';
 
 	const marketPrice$ = derived(
 		exchanges.map((exchange) => exchange.marketPrice$),
@@ -137,6 +139,15 @@
 			}
 		};
 	}
+
+	function onSwitchTypeHandler() {
+		if (type === 'staircase') {
+			type = 'ungrouped';
+			return;
+		}
+
+		type = 'staircase';
+	}
 </script>
 
 <Meta title="Litebook" component={LiteBook} />
@@ -176,6 +187,32 @@
 						{/each}
 					</select>
 				</div>
+
+				<div class="flex flex-col">
+					<div class="text-white mb-2">Length</div>
+					<input
+						class="pl-2"
+						type="number"
+						min={10}
+						max={200}
+						value={$length$}
+						on:blur={(e) => {
+							const value = e.currentTarget.valueAsNumber;
+							const n = Math.max(10, Math.min(value, 200));
+
+							length$.set(n);
+							e.currentTarget.value = n + '';
+						}}
+					/>
+				</div>
+
+				<button class="w-20 box-content" on:click={onSwitchTypeHandler}>
+					{#if type === 'staircase'}
+						Staircase
+					{:else}
+						Ungrouped
+					{/if}
+				</button>
 
 				<div class="flex items-center">
 					<span class="text-2xl text-white font-black upp">Ask</span>
@@ -262,6 +299,8 @@
 									from={exchange.from()}
 									to={exchange.to()}
 									grouping={$grouping$}
+									length={$length$}
+									{type}
 								/>
 							</Feeder>
 						</div>
@@ -314,10 +353,10 @@
 		height: 96px;
 	}
 
-	button.currency-switch {
+	button {
 		@apply p-2 font-semibold border border-white text-white bg-white bg-opacity-0 hover:bg-opacity-10 active:bg-opacity-20;
 	}
-	button.currency-switch.selected {
+	button.selected {
 		@apply bg-white bg-opacity-100 text-gray-900 hover:bg-opacity-80 active:bg-opacity-70;
 	}
 </style>
