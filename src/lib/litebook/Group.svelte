@@ -16,6 +16,8 @@
 
 	export let grouping = 0;
 
+	export let type: 'staircase' | 'ungrouped' = 'staircase';
+
 	let klass = '';
 	export { klass as class };
 
@@ -60,12 +62,14 @@
 				{@const price = getPrice(grouping)(item)}
 				{@const exponent = Math.min(2, Math.log10(grouping || 1))}
 
-				<div class="flex-1 flex min-h-0" animate:flip={{duration: 100}}>
+				{@const width = type === 'staircase' ? scale(total) : scale(size)}
+
+				<div class="flex-1 flex min-h-0" animate:flip={{ duration: 100 }}>
 					<SpreadItem
 						{total}
 						{size}
 						{price}
-						width={scale(total)}
+						{width}
 						{backgroundColor}
 						{textColor}
 						fractionDigits={Math.abs(Math.floor(exponent)) +
