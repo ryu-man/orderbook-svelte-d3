@@ -17,8 +17,11 @@
 	import { ColorPickr } from '$lib/component';
 	import { scaleBand } from 'd3';
 	import { derived } from 'svelte/store';
+	import { Configuration, setConfigurationContext } from '$lib/configuration';
 
-	const { grouping$, theme$ } = getConfigurationContext();
+	setConfigurationContext();
+
+	const { grouping$, theme$, length$ } = getConfigurationContext();
 
 	const currencies = ['BTC', 'ETH', 'XRP'];
 
@@ -47,7 +50,7 @@
 	const aggregationValues$ = derived(
 		marketPrice$,
 		(price) => {
-			if (price) {
+			if (price === 0) {
 				return [];
 			}
 
@@ -137,12 +140,13 @@
 <div
 	class="w-full h-full overflow-hidden flex flex-col relative"
 	style="background-color: rgb(0 0 0)"
+	bind:clientWidth
 >
 	<div
 		class="settings-bar absolute top-0 left-0 z-10 w-full border-b border-white border-opacity-20"
 		style="backdrop-filter: blur(6px);"
 	>
-		<div class="w-full p-4 box-border flex justify-between gap-2">
+		<div class="w-full p-4 box-border flex justify-between gap-6">
 			<div class="flex gap-2">
 				<div class="flex items-center gap-2">
 					{#each currencies as currency}
@@ -154,9 +158,8 @@
 					{/each}
 				</div>
 			</div>
-
 			<div class="flex flex-col">
-				<div class="text-white mb-2">Aggregating Grouping</div>
+				<div class="text-white mb-2 truncate">Aggregating Grouping</div>
 				<select
 					name=""
 					id=""
@@ -169,8 +172,26 @@
 				</select>
 			</div>
 
+			<div class="flex flex-col">
+				<div class="text-white mb-2">Length</div>
+				<input
+					class="pl-2"
+					type="number"
+					min={10}
+					max={200}
+					value={$length$}
+					on:blur={(e) => {
+						const value = e.currentTarget.valueAsNumber;
+						const n = Math.max(10, Math.min(value, 200));
+
+						length$.set(n);
+						e.currentTarget.value = n + '';
+					}}
+				/>
+			</div>
+
 			<div class="flex items-center">
-				<span class="text-4xl text-white font-black upp">Ask</span>
+				<span class="text-2xl text-white font-black upp">Ask</span>
 			</div>
 
 			<div class="flex flex-col">
@@ -181,8 +202,8 @@
 						on:change={(e) => ($theme$.askBin[0][0] = e.detail)}
 					/>
 					<ColorPickr
-						value={colord($theme$.bidBin[1][0]).toHex()}
-						on:change={(e) => ($theme$.bidBin[1][0] = e.detail)}
+						value={colord($theme$.askBin[1][0]).toHex()}
+						on:change={(e) => ($theme$.askBin[1][0] = e.detail)}
 					/>
 				</div>
 			</div>
@@ -202,7 +223,7 @@
 			</div>
 
 			<div class="flex items-center">
-				<span class="text-4xl text-white font-black">Bid</span>
+				<span class="text-2xl text-white font-black">Bid</span>
 			</div>
 
 			<div class="flex flex-col">
@@ -234,7 +255,7 @@
 			</div>
 
 			<div class="flex items-center">
-				<span class="text-4xl text-white font-black upp">Boundaries</span>
+				<span class="text-2xl text-white font-black upp">Boundaries</span>
 			</div>
 
 			<div class="flex gap-2">
@@ -255,7 +276,7 @@
 			</div>
 
 			<div class="flex items-center">
-				<span class="text-4xl text-white font-black upp">Market Price</span>
+				<span class="text-2xl text-white font-black upp">Market Price</span>
 			</div>
 
 			<div class="flex gap-2">
@@ -277,7 +298,7 @@
 		</div>
 	</div>
 
-	<div class="flex-1 overflow-hidden relative" bind:clientWidth>
+	<div class="flex-1 overflow-hidden relative">
 		<div class="absolute inset-0 pointer-events-none z-10">
 			<div
 				class="orderbooks-names inner absolute w-full h-12 border-t border-white border-opacity-20"
@@ -295,7 +316,7 @@
 							<input
 								class="pointer-events-auto"
 								type="checkbox"
-								checked={exchange.status() === 'on'}
+								checked={true}
 								on:change={onChangeStatusHandler(exchange)}
 							/>
 							<span>{exchange.fullname}</span>
@@ -304,7 +325,7 @@
 				</div>
 			</div>
 		</div>
-		<Orderbooks {exchanges} />
+		<Orderbooks {exchanges} length={$length$} />
 	</div>
 </div>
 
