@@ -29,12 +29,12 @@
 
 	let exchanges: Exchange[] = [
 		new CoinbaseExchange({ from: from, to: 'USD' }).focus(true),
-		// new BinanceExchange({ from: from.toLowerCase(), to: 'usdt' }),
-		// new BitfinexExchange({ from: from, to: 'UST' }),
-		// new BitmexExchange({ from: from, to: 'USD' }),
-		// new BybitExchange({ from: from, to: 'USDT' }),
-		// new BitgetExchange({ from: from, to: 'USDT' }),
-		// new KrakenExchange({ from: from, to: 'USD' })
+		new BinanceExchange({ from: from.toLowerCase(), to: 'usdt' }),
+		new BitfinexExchange({ from: from, to: 'UST' }),
+		new BitmexExchange({ from: from, to: 'USD' }),
+		new BybitExchange({ from: from, to: 'USDT' }),
+		new BitgetExchange({ from: from, to: 'USDT' }),
+		new KrakenExchange({ from: from, to: 'USD' })
 	];
 
 	let clientWidth = 0;
