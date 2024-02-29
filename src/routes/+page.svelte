@@ -25,16 +25,16 @@
 
 	const currencies = ['BTC', 'ETH', 'XRP'];
 
-	let from = 'BTC'; // | 'ETH' | 'SOL'
+	let from = 'ETH'; // | 'ETH' | 'SOL'
 
 	let exchanges: Exchange[] = [
 		new CoinbaseExchange({ from: from, to: 'USD' }).focus(true),
-		new BinanceExchange({ from: from.toLowerCase(), to: 'usdt' }),
-		new BitfinexExchange({ from: from, to: 'UST' }),
-		new BitmexExchange({ from: from, to: 'USD' }),
-		new BybitExchange({ from: from, to: 'USDT' }),
-		new BitgetExchange({ from: from, to: 'USDT' }),
-		new KrakenExchange({ from: from, to: 'USD' })
+		// new BinanceExchange({ from: from.toLowerCase(), to: 'usdt' }),
+		// new BitfinexExchange({ from: from, to: 'UST' }),
+		// new BitmexExchange({ from: from, to: 'USD' }),
+		// new BybitExchange({ from: from, to: 'USDT' }),
+		// new BitgetExchange({ from: from, to: 'USDT' }),
+		// new KrakenExchange({ from: from, to: 'USD' })
 	];
 
 	let clientWidth = 0;
@@ -42,6 +42,7 @@
 	const marketPrice$ = derived(
 		exchanges.map((exchange) => exchange.marketPrice$),
 		(prices) => {
+			console.log(prices)
 			return Math.max(...prices);
 		},
 		0
